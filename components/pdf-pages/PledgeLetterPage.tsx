@@ -114,7 +114,7 @@ export default function PledgeLetterPage({ data }: Page4Props) {
             </div>
 
              {/* Signature Section */}
-             <div className="absolute bottom-24 left-12">
+             <div className="absolute bottom-24 left-16">
                 <div className="flex items-center mb-2 text-xs">
                     <span className="font-bold">Name:</span>
                     <div className=" ml-2">{data.managerName || ''}</div>

@@ -4,16 +4,11 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import {
   CheckCircle,
@@ -24,136 +19,162 @@ import {
   Users,
   CheckSquare,
   Upload,
-  Eye,
   Download,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, Phone } from "lucide-react";
 import Logo from "./logo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLocale } from "next-intl";
+import { clearanceTypeArabic } from "@/lib/clearance-type";
 
-// Form Schema
-const formSchema = z.object({
-  // Step 1: Clearance Type
-  clearanceType: z
-    .enum(["Permanent", "Temporary", "Urgent"])
-    .refine((val) => val !== undefined, {
-      message: "Please select a clearance type",
-    }),
+// Form Schema - will be created inside component to access translations
+const createFormSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      // Step 1: Clearance Type
+      clearanceType: z
+        .enum(["Permanent", "Temporary", "Urgent"])
+        .refine((val) => val !== undefined, {
+          message: t("validation.clearanceTypeRequired"),
+        }),
 
-  // Step 2: Company Information
-  companyNameEnglish: z.string().min(1, "Company name is required"),
-  companyNameArabic: z.string().min(1, "اسم الشركة مطلوب"),
-  contractedWithEnglish: z.string().min(1, "Contracted with is required"),
-  contractedWithArabic: z.string().min(1, "المتعاقد مع مطلوب"),
+      // Step 2: Company Information
+      companyNameEnglish: z
+        .string()
+        .min(1, t("validation.companyNameRequired")),
+      companyNameArabic: z
+        .string()
+        .min(1, t("validation.companyNameArabicRequired")),
+      contractedWithEnglish: z
+        .string()
+        .min(1, t("validation.contractedWithRequired")),
+      contractedWithArabic: z
+        .string()
+        .min(1, t("validation.contractedWithArabicRequired")),
 
-  // Step 3: Contract Information
-  contractNumber: z.string().min(1, "Contract number is required"),
-  contractSubjectEnglish: z.string().min(1, "Contract subject is required"),
-  contractSubjectArabic: z.string().min(1, "موضوع العقد مطلوب"),
-  startingDate: z.string().min(1, "Starting date is required"),
-  endDate: z.string().min(1, "End date is required"),
-  duration: z.string().min(1, "Duration is required"),
+      // Step 3: Contract Information
+      contractNumber: z.string().min(1, t("validation.contractNumberRequired")),
+      contractSubjectEnglish: z.string().min(1, t("validation.contractSubjectRequired")),
+      contractSubjectArabic: z.string().min(1, t("validation.contractSubjectArabicRequired")),
+      startingDate: z.string().min(1, t("validation.startingDateRequired")),
+      endDate: z.string().min(1, t("validation.endDateRequired")),
+      duration: z.string().min(1, t("validation.durationRequired")),
 
-  // Entry approval type (optional)
-  entryApprovalType: z.string().optional(),
+      // Entry approval type (optional)
+      entryApprovalType: z.string().optional(),
 
-  // Step 4: Staff Information
-  numberOfIraqis: z.string().min(1, "Number of Iraqis is required"),
-  numberOfInternationals: z
-    .string()
-    .min(1, "Number of Internationals is required"),
-  numberOfVehicles: z.string().min(1, "Number of vehicles is required"),
-  numberOfWeapons: z.string().min(1, "Number of weapons is required"),
+      // Step 4: Staff Information
+      numberOfIraqis: z.string().min(1, t("validation.numberOfIraqisRequired")),
+      numberOfInternationals: z
+        .string()
+        .min(1, t("validation.numberOfInternationalsRequired")),
+      numberOfVehicles: z.string().min(1, t("validation.numberOfVehiclesRequired")),
+      numberOfWeapons: z.string().min(1, t("validation.numberOfWeaponsRequired")),
 
-  // Manager Information
-  managerName: z.string().min(1, "Manager name is required"),
-  position: z.string().min(1, "Position is required"),
+      // Manager Information
+      managerName: z.string().min(1, t("validation.managerNameRequired")),
+      position: z.string().min(1, t("validation.positionRequired")),
 
-  // Focal Point
-  fpPhone: z.string().min(1, "Phone number is required"),
+      // Focal Point
+      fpPhone: z.string().min(1, t("validation.phoneNumberRequired")),
 
-  // Purpose (conditional based on clearance type)
-  purposeOfEntry: z.string().optional(),
-  purposeOfEntryArabic: z.string().optional(),
+      // Purpose (conditional based on clearance type)
+      purposeOfEntry: z.string().optional(),
+      purposeOfEntryArabic: z.string().optional(),
 
-  // Authorized Person (missing fields in template)
-  authorizedPersonName: z.string().min(1, "Authorized person name is required"),
-  authorizedPersonNameArabic: z.string().min(1, "اسم الشخص المخول مطلوب"),
-  authorizedPersonId: z.string().min(1, "Authorized person ID is required"),
-  authorizationStartDate: z.string().min(1, "Start date is required"),
-  authorizationEndDate: z.string().min(1, "End date is required"),
-  contactInfo: z.string().min(1, "Contact info is required"),
+      // Authorized Person (missing fields in template)
+      authorizedPersonName: z
+        .string()
+        .min(1, t("validation.authorizedPersonNameRequired")),
+      authorizedPersonNameArabic: z.string().min(1, t("validation.authorizedPersonNameArabicRequired")),
+      authorizedPersonId: z.string().min(1, t("validation.authorizedPersonIdRequired")),
+      authorizationStartDate: z.string().min(1, t("validation.startDateRequired")),
+      authorizationEndDate: z.string().min(1, t("validation.endDateRequired")),
+      contactInfo: z.string().min(1, t("validation.contactInfoRequired")),
 
-  // Letter Header
-  headerImageUrl: z.string().optional(),
-}).refine((data) => {
-  // Purpose of entry is required only when clearance type is not Permanent
-  if (data.clearanceType !== "Permanent") {
-    return data.purposeOfEntry && data.purposeOfEntry.trim().length > 0;
-  }
-  return true;
-}, {
-  message: "Purpose of entry is required",
-  path: ["purposeOfEntry"]
-}).refine((data) => {
-  // Purpose of entry Arabic is required only when clearance type is not Permanent
-  if (data.clearanceType !== "Permanent") {
-    return data.purposeOfEntryArabic && data.purposeOfEntryArabic.trim().length > 0;
-  }
-  return true;
-}, {
-  message: "الغرض من الدخول مطلوب",
-  path: ["purposeOfEntryArabic"]
-});
+      // Letter Header
+      headerImageUrl: z.string().min(1, t("validation.headerImageRequired")),
+    })
+    .refine(
+      (data) => {
+        // Purpose of entry is required only when clearance type is not Permanent
+        if (data.clearanceType !== "Permanent") {
+          return data.purposeOfEntry && data.purposeOfEntry.trim().length > 0;
+        }
+        return true;
+      },
+      {
+        message: t("validation.purposeOfEntryRequired"),
+        path: ["purposeOfEntry"],
+      }
+    )
+    .refine(
+      (data) => {
+        // Purpose of entry Arabic is required only when clearance type is not Permanent
+        if (data.clearanceType !== "Permanent") {
+          return (
+            data.purposeOfEntryArabic &&
+            data.purposeOfEntryArabic.trim().length > 0
+          );
+        }
+        return true;
+      },
+      {
+        message: t("validation.purposeOfEntryArabicRequired"),
+        path: ["purposeOfEntryArabic"],
+      }
+    );
 
-type FormData = z.infer<typeof formSchema>;
-
-const steps = [
+const getSteps = (t: (key: string) => string) => [
   {
     id: 1,
-    title: "Clearance & Approval Type",
-    description: "Choose clearance type and entry approval",
+    title: t("form.steps.clearance.title"),
+    description: t("form.steps.clearance.description"),
     icon: CheckSquare,
   },
   {
     id: 2,
-    title: "Company Info",
-    description: "Enter company information and contact details",
+    title: t("form.steps.company.title"),
+    description: t("form.steps.company.description"),
     icon: Building2,
   },
   {
     id: 3,
-    title: "Contract Details",
-    description: "Contract information, contractor details and duration",
+    title: t("form.steps.contract.title"),
+    description: t("form.steps.contract.description"),
     icon: FileText,
   },
   {
     id: 4,
-    title: "Staff & Purpose",
-    description: "Number of staff, resources and purpose of entry",
+    title: t("form.steps.staff.title"),
+    description: t("form.steps.staff.description"),
     icon: Users,
   },
   {
     id: 5,
-    title: "Management Contacts",
-    description: "Management contact information",
+    title: t("form.steps.management.title"),
+    description: t("form.steps.management.description"),
     icon: Users,
   },
   {
     id: 6,
-    title: "Authorized Person",
-    description: "Authorization details and contact information",
+    title: t("form.steps.authorized.title"),
+    description: t("form.steps.authorized.description"),
     icon: FileText,
   },
   {
     id: 7,
-    title: "Review & Submit",
-    description: "Review and submit your application",
+    title: t("form.steps.review.title"),
+    description: t("form.steps.review.description"),
     icon: CheckCircle,
   },
 ];
 
 export default function MultiStepForm() {
+  const t = useTranslations();
+  const formSchema = createFormSchema(t);
+  type FormData = z.infer<typeof formSchema>;
+  const steps = getSteps(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [headerImageUrl, setHeaderImageUrl] = useState<string>("");
 
@@ -254,11 +275,13 @@ export default function MultiStepForm() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
+  const locale = useLocale()
+
   const handleImageUpload = (file: File) => {
     if (file && file.type.startsWith("image/")) {
       // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        setImageError("File size must be less than 10MB");
+        setImageError(t("validation.fileSizeTooLarge"));
         return;
       }
 
@@ -278,7 +301,7 @@ export default function MultiStepForm() {
 
         if (width < 680 || height < 96) {
           setImageError(
-            "Image dimensions too small. Minimum size: 680x96 pixels for letterhead banner"
+            t("validation.imageDimensionsTooSmall")
           );
           setIsUploading(false);
           return;
@@ -286,7 +309,7 @@ export default function MultiStepForm() {
 
         if (width > 1360 || height > 192) {
           setImageError(
-            "Image dimensions too large. Maximum size: 1360x192 pixels"
+            t("validation.imageDimensionsTooLarge")
           );
           setIsUploading(false);
           return;
@@ -294,7 +317,7 @@ export default function MultiStepForm() {
 
         if (aspectRatio < 6.0 || aspectRatio > 8.0) {
           setImageError(
-            "Invalid aspect ratio. Letterhead must be a wide banner format (width should be 6-8 times the height)"
+            t("validation.invalidAspectRatio")
           );
           setIsUploading(false);
           return;
@@ -305,6 +328,7 @@ export default function MultiStepForm() {
         reader.onload = (e) => {
           const result = e.target?.result as string;
           setHeaderImageUrl(result);
+          setValue("headerImageUrl", result); // Update form field
           setImageError(null); // Clear any previous errors
           setIsUploading(false);
           setUploadProgress(100);
@@ -321,14 +345,14 @@ export default function MultiStepForm() {
       };
 
       img.onerror = () => {
-        setImageError("Invalid image file. Please select a valid image.");
+        setImageError(t("validation.invalidImageFile"));
         setIsUploading(false);
       };
 
       // Load image to check dimensions
       img.src = URL.createObjectURL(file);
     } else {
-      setImageError("Please select a valid image file (PNG, JPG, GIF)");
+      setImageError(t("validation.pleaseSelectValidImage"));
     }
   };
 
@@ -365,6 +389,7 @@ export default function MultiStepForm() {
 
   const removeImage = () => {
     setHeaderImageUrl("");
+    setValue("headerImageUrl", ""); // Clear form field
     setUploadProgress(0);
   };
 
@@ -384,7 +409,7 @@ export default function MultiStepForm() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate PDF");
+        throw new Error(t("validation.failedToGeneratePdf"));
       }
 
       const blob = await response.blob();
@@ -392,7 +417,7 @@ export default function MultiStepForm() {
       window.open(url, "_blank");
     } catch (error) {
       console.error("Error generating PDF preview:", error);
-      alert("Error generating PDF preview. Please try again.");
+      alert(t("validation.errorGeneratingPdfPreview"));
     }
   };
 
@@ -407,10 +432,10 @@ export default function MultiStepForm() {
     console.log("Form is valid:", Object.keys(errors).length === 0);
 
     setIsGeneratingPDF(true);
-    
+
     try {
       console.log("Starting PDF generation with data:", formData);
-      
+
       // Generate PDF
       const response = await fetch("/api/generate-pdf-tsx", {
         method: "POST",
@@ -426,33 +451,40 @@ export default function MultiStepForm() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("PDF API error response:", errorText);
-        throw new Error(`Failed to generate PDF: ${response.status} - ${errorText}`);
+        throw new Error(
+          `${t("validation.failedToGeneratePdfWithStatus")}: ${response.status} - ${errorText}`
+        );
       }
 
       // Create blob and download
       const blob = await response.blob();
       console.log("PDF blob size:", blob.size, "bytes");
-      
+
       if (blob.size === 0) {
-        throw new Error("Generated PDF is empty");
+        throw new Error(t("validation.generatedPdfEmpty"));
       }
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.style.display = "none";
       a.href = url;
-      a.download = `security-clearance-${data.clearanceType.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+      a.download = `security-clearance-${data.clearanceType
+        .toLowerCase()
+        .replace(/\s+/g, "-")}-${Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
       // Show success message
-      alert("PDF generated and downloaded successfully!");
+      alert(t("validation.pdfGeneratedSuccessfully"));
     } catch (error) {
       console.error("Error generating PDF:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Error generating PDF: ${errorMessage}. Please check the console for details.`);
+      const errorMessage =
+        error instanceof Error ? error.message : t("validation.unknownErrorOccurred");
+      alert(
+        `${t("validation.errorGeneratingPdfDetails")}: ${errorMessage}`
+      );
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -465,20 +497,12 @@ export default function MultiStepForm() {
           <div className="space-y-12 p-6">
             {/* Clearance Type Section */}
             <div className="space-y-6">
-              <div className="text-center">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Security Clearance Type
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Select the type of security clearance you need
-                </p>
-              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   {
                     value: "Permanent",
-                    label: "Permanent",
-                    description: "Long-term clearance for extended projects",
+                    label: t("form.clearanceType.permanent"),
+                    description: t("form.clearanceType.permanentDescription"),
                     icon: (
                       <svg
                         className="w-8 h-8 mb-3"
@@ -497,8 +521,8 @@ export default function MultiStepForm() {
                   },
                   {
                     value: "Temporary",
-                    label: "Temporary",
-                    description: "Short-term clearance for specific tasks",
+                    label: t("form.clearanceType.temporary"),
+                    description: t("form.clearanceType.temporaryDescription"),
                     icon: (
                       <svg
                         className="w-8 h-8 mb-3"
@@ -517,8 +541,8 @@ export default function MultiStepForm() {
                   },
                   {
                     value: "Urgent",
-                    label: "Urgent",
-                    description: "Emergency clearance for immediate needs",
+                    label: t("form.clearanceType.urgent"),
+                    description: t("form.clearanceType.urgentDescription"),
                     icon: (
                       <svg
                         className="w-8 h-8 mb-3"
@@ -595,110 +619,115 @@ export default function MultiStepForm() {
 
             {/* Entry Approval Type Section */}
             <div className="space-y-6">
-              <div className="text-center">
+              <div className="text-start">
                 <h3 className="text-xl font-semibold text-foreground mb-2">
-                  Entry Approval Type
+                  {t("form.entryApprovalType.title")}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {watchedFields.clearanceType === "Temporary" ||
                   watchedFields.clearanceType === "Urgent"
-                    ? "Automatically set to 'New' for Temporary and Urgent clearances"
-                    : "Choose the type of entry approval"}
+                    ? t("form.entryApprovalType.autoDescription")
+                    : t("form.entryApprovalType.description")}
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {[
-                  {
-                    value: "New",
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Re-new",
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Add",
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Cancel",
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Other",
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                    ),
-                  },
-                ].map((opt) => {
+                    {
+                      value: "New",
+                      label: t("form.entryApprovalType.new"),
+                      icon: (
+                        <svg
+                          className="w-5 h-5 mb-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                      ),
+                    },
+                    {
+                      value: "Re-new",
+                      label: t("form.entryApprovalType.renew"),
+                      icon: (
+                        <svg
+                          className="w-5 h-5 mb-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                      ),
+                    },
+                    {
+                      value: "Add",
+                      label: t("form.entryApprovalType.add"),
+                      icon: (
+                        <svg
+                          className="w-5 h-5 mb-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
+                        </svg>
+                      ),
+                    },
+                    {
+                      value: "Cancel",
+                      label: t("form.entryApprovalType.cancel"),
+                      icon: (
+                        <svg
+                          className="w-5 h-5 mb-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      ),
+                    },
+                    {
+                      value: "Other",
+                      label: t("form.entryApprovalType.other"),
+                      icon: (
+                        <svg
+                          className="w-5 h-5 mb-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      ),
+                    },
+                  ].map((opt) => {
                   const isDisabled =
                     (watchedFields.clearanceType === "Temporary" ||
                       watchedFields.clearanceType === "Urgent") &&
@@ -734,7 +763,7 @@ export default function MultiStepForm() {
                         <div className="flex flex-col items-center">
                           {opt.icon}
                           <span className="text-sm font-medium">
-                            {opt.value}
+                            {opt.label}
                           </span>
                         </div>
                         {watchedFields.entryApprovalType === opt.value && (
@@ -770,7 +799,7 @@ export default function MultiStepForm() {
               <CardContent className="pt-6">
                 <div>
                   <Label className="text-sm font-medium mb-3 block">
-                    Company Letterhead
+                    {t("form.companyLetterhead.title")}
                   </Label>
 
                   {!headerImageUrl ? (
@@ -794,14 +823,14 @@ export default function MultiStepForm() {
                       />
                       <p className="text-sm font-medium text-foreground mb-1">
                         {isDragOver
-                          ? "Drop your image here"
-                          : "Click to upload or drag and drop"}
+                          ? t("form.companyLetterhead.dropText")
+                          : t("form.companyLetterhead.uploadText")}
                       </p>
                       <p className="text-xs text-muted-foreground mb-1">
-                        PNG, JPG, GIF up to 10MB
+                        {t("form.companyLetterhead.fileTypes")}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Required: 680x96 to 1360x192 pixels (banner format)
+                        {t("form.companyLetterhead.dimensions")}
                       </p>
 
                       <input
@@ -811,13 +840,18 @@ export default function MultiStepForm() {
                         onChange={handleFileInputChange}
                         className="hidden"
                       />
+                      <input
+                        type="hidden"
+                        {...register("headerImageUrl")}
+                        value={headerImageUrl}
+                      />
 
                       {isUploading && (
                         <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 rounded-lg flex items-center justify-center">
                           <div className="text-center">
                             <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2"></div>
                             <p className="text-sm text-foreground">
-                              Uploading...
+                              {t("form.companyLetterhead.uploading")}
                             </p>
                           </div>
                         </div>
@@ -827,7 +861,7 @@ export default function MultiStepForm() {
                     <div className="relative group rounded-lg overflow-hidden border border-border">
                       <img
                         src={headerImageUrl}
-                        alt="Company letterhead"
+                        alt={t("form.companyLetterhead.alt")}
                         className="w-full h-32 object-cover"
                       />
 
@@ -840,14 +874,14 @@ export default function MultiStepForm() {
                           }
                           className="px-3 py-1.5 bg-white text-gray-900 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors"
                         >
-                          Replace
+                          {t("form.companyLetterhead.replace")}
                         </button>
                         <button
                           type="button"
                           onClick={removeImage}
                           className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
                         >
-                          Delete
+                          {t("form.companyLetterhead.delete")}
                         </button>
                       </div>
 
@@ -875,18 +909,31 @@ export default function MultiStepForm() {
                   </div>
                 )}
 
+                {errors.headerImageUrl && (
+                  <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                      <p className="text-red-700 dark:text-red-300 text-sm font-medium">
+                        {errors.headerImageUrl.message}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
                   <div>
                     <Label
                       htmlFor="companyNameEnglish"
                       className="text-sm font-medium"
                     >
-                      Company Name (English)
+                      {t("form.labels.companyNameEnglish")}
                     </Label>
                     <Input
                       id="companyNameEnglish"
                       {...register("companyNameEnglish")}
-                      placeholder="Enter company name in English"
+                      placeholder={t("form.placeholders.companyNameEnglish")}
                       className="mt-1"
                     />
                     {errors.companyNameEnglish && (
@@ -901,12 +948,12 @@ export default function MultiStepForm() {
                       htmlFor="companyNameArabic"
                       className="text-sm font-medium"
                     >
-                      Company Name (Arabic)
+                      {t("form.labels.companyNameArabic")}
                     </Label>
                     <Input
                       id="companyNameArabic"
                       {...register("companyNameArabic")}
-                      placeholder="أدخل اسم الشركة بالعربية"
+                      placeholder={t("form.placeholders.companyNameArabic")}
                       dir="rtl"
                       className="mt-1"
                     />
@@ -922,13 +969,13 @@ export default function MultiStepForm() {
                       htmlFor="contactInfo"
                       className="text-sm font-medium"
                     >
-                      Company Email
+                      {t("form.labels.contactInfo")}
                     </Label>
                     <Input
                       id="contactInfo"
                       type="email"
                       {...register("contactInfo")}
-                      placeholder="Enter company email address"
+                      placeholder={t("form.placeholders.contactInfo")}
                       className="mt-1"
                     />
                     {errors.contactInfo && (
@@ -954,12 +1001,12 @@ export default function MultiStepForm() {
                       htmlFor="contractNumber"
                       className="text-sm font-medium"
                     >
-                      Contract Number
+                      {t("form.labels.contractNumber")}
                     </Label>
                     <Input
                       id="contractNumber"
                       {...register("contractNumber")}
-                      placeholder="Enter contract number"
+                      placeholder={t("form.placeholders.contractNumber")}
                       className="mt-1"
                     />
                     {errors.contractNumber && (
@@ -974,7 +1021,7 @@ export default function MultiStepForm() {
                       htmlFor="startingDate"
                       className="text-sm font-medium"
                     >
-                      Contract Starting Date
+                      {t("form.labels.startingDate")}
                     </Label>
                     <Input
                       id="startingDate"
@@ -991,7 +1038,7 @@ export default function MultiStepForm() {
 
                   <div>
                     <Label htmlFor="endDate" className="text-sm font-medium">
-                      Contract End Date
+                      {t("form.labels.endDate")}
                     </Label>
                     <Input
                       id="endDate"
@@ -1008,12 +1055,12 @@ export default function MultiStepForm() {
 
                   <div>
                     <Label htmlFor="duration" className="text-sm font-medium">
-                      Duration (Days)
+                      {t("form.labels.duration")}
                     </Label>
                     <Input
                       id="duration"
                       {...register("duration")}
-                      placeholder="e.g., 0"
+                      placeholder={t("form.placeholders.duration")}
                       className="mt-1"
                     />
                     {errors.duration && (
@@ -1028,12 +1075,12 @@ export default function MultiStepForm() {
                       htmlFor="contractedWithEnglish"
                       className="text-sm font-medium"
                     >
-                      Contracted With (English)
+                      {t("form.labels.contractedWithEnglish")}
                     </Label>
                     <Input
                       id="contractedWithEnglish"
                       {...register("contractedWithEnglish")}
-                      placeholder="Enter contracted with in English"
+                      placeholder={t("form.placeholders.contractedWithEnglish")}
                       className="mt-1"
                     />
                     {errors.contractedWithEnglish && (
@@ -1048,12 +1095,12 @@ export default function MultiStepForm() {
                       htmlFor="contractedWithArabic"
                       className="text-sm font-medium"
                     >
-                      المتعاقد مع (عربي)
+                      {t("form.labels.contractedWithArabic")}
                     </Label>
                     <Input
                       id="contractedWithArabic"
                       {...register("contractedWithArabic")}
-                      placeholder="أدخل المتعاقد مع بالعربية"
+                      placeholder={t("form.placeholders.contractedWithArabic")}
                       dir="rtl"
                       className="mt-1"
                     />
@@ -1071,12 +1118,12 @@ export default function MultiStepForm() {
                           htmlFor="contractSubjectEnglish"
                           className="text-sm font-medium"
                         >
-                          Contract Subject (English)
+                          {t("form.labels.contractSubjectEnglish")}
                         </Label>
                         <Textarea
                           id="contractSubjectEnglish"
                           {...register("contractSubjectEnglish")}
-                          placeholder="Describe the contract subject in English"
+                          placeholder={t("form.placeholders.contractSubjectEnglish")}
                           className="mt-1 min-h-[100px]"
                         />
                         {errors.contractSubjectEnglish && (
@@ -1091,12 +1138,12 @@ export default function MultiStepForm() {
                           htmlFor="contractSubjectArabic"
                           className="text-sm font-medium"
                         >
-                          موضوع العقد (عربي)
+                          {t("form.labels.contractSubjectArabic")}
                         </Label>
                         <Textarea
                           id="contractSubjectArabic"
                           {...register("contractSubjectArabic")}
-                          placeholder="اكتب موضوع العقد بالعربية"
+                          placeholder={t("form.placeholders.contractSubjectArabic")}
                           dir="rtl"
                           className="mt-1 min-h-[100px]"
                         />
@@ -1126,13 +1173,13 @@ export default function MultiStepForm() {
                         htmlFor="numberOfIraqis"
                         className="text-sm font-medium"
                       >
-                        Number of Iraqis
+                        {t("form.staffLabels.numberOfIraqis")}
                       </Label>
                       <Input
                         id="numberOfIraqis"
                         type="number"
                         {...register("numberOfIraqis")}
-                        placeholder="0"
+                        placeholder={t("form.placeholders.numberOfIraqis")}
                         className="mt-1"
                       />
                       {errors.numberOfIraqis && (
@@ -1147,13 +1194,13 @@ export default function MultiStepForm() {
                         htmlFor="numberOfInternationals"
                         className="text-sm font-medium"
                       >
-                        Number of Internationals
+                        {t("form.staffLabels.numberOfInternationals")}
                       </Label>
                       <Input
                         id="numberOfInternationals"
                         type="number"
                         {...register("numberOfInternationals")}
-                        placeholder="0"
+                        placeholder={t("form.placeholders.numberOfInternationals")}
                         className="mt-1"
                       />
                       {errors.numberOfInternationals && (
@@ -1168,13 +1215,13 @@ export default function MultiStepForm() {
                         htmlFor="numberOfVehicles"
                         className="text-sm font-medium"
                       >
-                        Number of Vehicles
+                        {t("form.staffLabels.numberOfVehicles")}
                       </Label>
                       <Input
                         id="numberOfVehicles"
                         type="number"
                         {...register("numberOfVehicles")}
-                        placeholder="0"
+                        placeholder={t("form.placeholders.numberOfVehicles")}
                         className="mt-1"
                       />
                       {errors.numberOfVehicles && (
@@ -1189,13 +1236,13 @@ export default function MultiStepForm() {
                         htmlFor="numberOfWeapons"
                         className="text-sm font-medium"
                       >
-                        Number of Weapons
+                        {t("form.staffLabels.numberOfWeapons")}
                       </Label>
                       <Input
                         id="numberOfWeapons"
                         type="number"
                         {...register("numberOfWeapons")}
-                        placeholder="0"
+                        placeholder={t("form.placeholders.numberOfWeapons")}
                         className="mt-1"
                       />
                       {errors.numberOfWeapons && (
@@ -1215,12 +1262,12 @@ export default function MultiStepForm() {
                             htmlFor="purposeOfEntry"
                             className="text-sm font-medium"
                           >
-                            Purpose of Entry (English)
+                            {t("form.staffLabels.purposeOfEntryEnglish")}
                           </Label>
                           <Textarea
                             id="purposeOfEntry"
                             {...register("purposeOfEntry")}
-                            placeholder="Describe the purpose of entry in English"
+                            placeholder={t("form.placeholders.purposeOfEntryEnglish")}
                             className="mt-1 min-h-[100px]"
                           />
                           {errors.purposeOfEntry && (
@@ -1235,12 +1282,12 @@ export default function MultiStepForm() {
                             htmlFor="purposeOfEntryArabic"
                             className="text-sm font-medium"
                           >
-                            الغرض من الدخول (عربي)
+                            {t("form.staffLabels.purposeOfEntryArabic")}
                           </Label>
                           <Textarea
                             id="purposeOfEntryArabic"
                             {...register("purposeOfEntryArabic")}
-                            placeholder="اكتب الغرض من الدخول بالعربية"
+                            placeholder={t("form.placeholders.purposeOfEntryArabic")}
                             dir="rtl"
                             className="mt-1 min-h-[100px]"
                           />
@@ -1270,12 +1317,12 @@ export default function MultiStepForm() {
                       htmlFor="managerName"
                       className="text-sm font-medium"
                     >
-                      Manager Name
+                      {t("form.staffLabels.managerName")}
                     </Label>
                     <Input
                       id="managerName"
                       {...register("managerName")}
-                      placeholder="Enter manager name"
+                      placeholder={t("form.placeholders.managerName")}
                       className="mt-1"
                     />
                     {errors.managerName && (
@@ -1287,12 +1334,12 @@ export default function MultiStepForm() {
 
                   <div>
                     <Label htmlFor="position" className="text-sm font-medium">
-                      Position
+                      {t("form.staffLabels.position")}
                     </Label>
                     <Input
                       id="position"
                       {...register("position")}
-                      placeholder="Enter position"
+                      placeholder={t("form.placeholders.position")}
                       className="mt-1"
                     />
                     {errors.position && (
@@ -1318,12 +1365,12 @@ export default function MultiStepForm() {
                       htmlFor="authorizedPersonName"
                       className="text-sm font-medium"
                     >
-                      Authorized Person Name (English)
+                      {t("form.staffLabels.authorizedPersonNameEnglish")}
                     </Label>
                     <Input
                       id="authorizedPersonName"
                       {...register("authorizedPersonName")}
-                      placeholder="Enter authorized person name"
+                      placeholder={t("form.placeholders.authorizedPersonName")}
                       className="mt-1"
                     />
                     {errors.authorizedPersonName && (
@@ -1339,12 +1386,12 @@ export default function MultiStepForm() {
                       className="text-sm font-medium"
                       dir="rtl"
                     >
-                      الاسم (عربي)
+                      {t("form.staffLabels.authorizedPersonNameArabic")}
                     </Label>
                     <Input
                       id="authorizedPersonNameArabic"
                       {...register("authorizedPersonNameArabic")}
-                      placeholder="أدخل اسم الشخص المخول"
+                      placeholder={t("form.placeholders.authorizedPersonNameArabic")}
                       dir="rtl"
                       className="mt-1"
                     />
@@ -1357,12 +1404,12 @@ export default function MultiStepForm() {
 
                   <div>
                     <Label htmlFor="fpPhone" className="text-sm font-medium">
-                      Phone Number
+                      {t("form.staffLabels.phoneNumber")}
                     </Label>
                     <Input
                       id="fpPhone"
                       {...register("fpPhone")}
-                      placeholder="Enter phone number"
+                      placeholder={t("form.placeholders.phoneNumber")}
                       className="mt-1"
                     />
                     {errors.fpPhone && (
@@ -1377,12 +1424,12 @@ export default function MultiStepForm() {
                       htmlFor="authorizedPersonId"
                       className="text-sm font-medium"
                     >
-                      ID Number (Civil ID/Passport)
+                      {t("form.staffLabels.idNumber")}
                     </Label>
                     <Input
                       id="authorizedPersonId"
                       {...register("authorizedPersonId")}
-                      placeholder="Enter ID number"
+                      placeholder={t("form.placeholders.authorizedPersonId")}
                       className="mt-1"
                     />
                     {errors.authorizedPersonId && (
@@ -1397,7 +1444,7 @@ export default function MultiStepForm() {
                       htmlFor="authorizationStartDate"
                       className="text-sm font-medium"
                     >
-                      Authorization Start Date
+                      {t("form.staffLabels.authorizationStartDate")}
                     </Label>
                     <Input
                       id="authorizationStartDate"
@@ -1417,7 +1464,7 @@ export default function MultiStepForm() {
                       htmlFor="authorizationEndDate"
                       className="text-sm font-medium"
                     >
-                      Authorization End Date
+                      {t("form.staffLabels.authorizationEndDate")}
                     </Label>
                     <Input
                       id="authorizationEndDate"
@@ -1440,112 +1487,75 @@ export default function MultiStepForm() {
       case 7:
         return (
           <div className="max-w-4xl mx-auto p-6 space-y-8">
-            {/* Header */}
-            <div className="text-center">
-              <h2 className="text-3xl font-bold tracking-tight mb-2">Review & Submit</h2>
-              <p className="text-muted-foreground">
-                Please review all information before generating your documents
-              </p>
-            </div>
-
             {/* Summary Section */}
-            <div className="bg-white border rounded-xl p-6 space-y-6">
+            <div className="space-y-6">
               {/* Clearance Type */}
               <div className="pb-4 border-b">
-                <h3 className="font-semibold text-lg mb-3">Clearance Type</h3>
-                <Badge variant="secondary" className="text-base px-4 py-2">
-                  {watchedFields.clearanceType}
+                <h3 className="font-semibold text-lg mb-3">{t("form.steps.review.clearanceTypeTitle")}</h3>
+                <Badge variant="secondary" className="text-xs px-4 py-2">
+                  {clearanceTypeArabic(watchedFields.clearanceType)}
                 </Badge>
               </div>
 
-              {/* Company & Contract Info */}
-              <div className="grid md:grid-cols-2 gap-6 pb-4 border-b">
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Company Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-600">Company:</span>
-                      <span className="ml-2 font-medium">{watchedFields.companyNameEnglish}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Contracted with:</span>
-                      <span className="ml-2 font-medium">{watchedFields.contractedWithEnglish}</span>
-                    </div>
+              {/* Company Info */}
+              <div className="pb-4 border-b">
+                <h4 className="font-medium mb-3 text-gray-900">
+                  {t("form.steps.review.companyInformation")}
+                </h4>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">{t("form.steps.review.company")}:</span>
+                    <span className="ml-2 font-medium">
+                      {watchedFields.companyNameEnglish}
+                    </span>
                   </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Contract Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-600">Contract Number:</span>
-                      <span className="ml-2 font-medium">{watchedFields.contractNumber}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Duration:</span>
-                      <span className="ml-2 font-medium">{watchedFields.startingDate} to {watchedFields.endDate}</span>
-                    </div>
+                  <div>
+                    <span className="text-gray-600">{t("form.steps.review.contractNumber")}:</span>
+                    <span className="ml-2 font-medium">
+                      {watchedFields.contractNumber}
+                    </span>
                   </div>
-                </div>
-              </div>
 
-              {/* Staff & Authorization */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Staff & Resources</h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="text-gray-600">Iraqis:</span>
-                      <span className="ml-2 font-medium">{watchedFields.numberOfIraqis}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Internationals:</span>
-                      <span className="ml-2 font-medium">{watchedFields.numberOfInternationals}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Vehicles:</span>
-                      <span className="ml-2 font-medium">{watchedFields.numberOfVehicles}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Weapons:</span>
-                      <span className="ml-2 font-medium">{watchedFields.numberOfWeapons}</span>
-                    </div>
+                  <div>
+                    <span className="text-gray-600">{t("form.steps.review.iraqis")}:</span>
+                    <span className="ml-2 font-medium">
+                      {watchedFields.numberOfIraqis}
+                    </span>
                   </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-3 text-gray-900">Authorized Representative</h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-600">Name:</span>
-                      <span className="ml-2 font-medium">{watchedFields.authorizedPersonName}</span>
-                      {watchedFields.authorizedPersonNameArabic && (
-                        <div className="text-xs text-gray-500 mt-1 ml-2">
-                          Arabic: {watchedFields.authorizedPersonNameArabic}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-gray-600">ID Number:</span>
-                      <span className="ml-2 font-medium">{watchedFields.authorizedPersonId}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Authorization Period:</span>
-                      <span className="ml-2 font-medium">{watchedFields.authorizationStartDate} to {watchedFields.authorizationEndDate}</span>
-                    </div>
+                  <div>
+                    <span className="text-gray-600">{t("form.steps.review.internationals")}:</span>
+                    <span className="ml-2 font-medium">
+                      {watchedFields.numberOfInternationals}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">{t("form.steps.review.vehicles")}:</span>
+                    <span className="ml-2 font-medium">
+                      {watchedFields.numberOfVehicles}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">{t("form.steps.review.weapons")}:</span>
+                    <span className="ml-2 font-medium">
+                      {watchedFields.numberOfWeapons}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Final Notice */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center mt-0.5">
+                <div className="w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center mt-0.5">
                   <span className="text-white text-xs font-bold">✓</span>
                 </div>
                 <div>
-                  <h5 className="font-medium text-blue-900 mb-1">Ready to Generate Documents</h5>
-                  <p className="text-sm text-blue-700">
-                    All information has been reviewed. Click &quot;Download PDF&quot; to generate your security clearance documents.
+                  <h5 className="font-medium text-gray-900 mb-1">
+                    {t("form.steps.review.readyToGenerate")}
+                  </h5>
+                  <p className="text-sm text-gray-700">
+                    {t("form.steps.review.allInfoReviewed")}
                   </p>
                 </div>
               </div>
@@ -1571,12 +1581,14 @@ export default function MultiStepForm() {
               <Logo width={25} height={25} />
               <span>Petrochina - Security Department</span>
             </button>
+
+            <LanguageSwitcher />
           </div>
 
           {/* Main Content */}
           <div className="flex flex-1 min-h-0">
             {/* Left Rail - Vertical Stepper */}
-            <aside className="border-r border-blue-100 p-8 w-2/6 overflow-y-auto">
+            <aside className="border-e border-blue-100 p-8 w-2/6 overflow-y-auto">
               <ol className="relative space-y-6">
                 {steps.map((step, idx) => {
                   const isActive = currentStep === step.id;
@@ -1589,7 +1601,7 @@ export default function MultiStepForm() {
                     >
                       {/* Enhanced Connector Line */}
                       {idx !== steps.length - 1 && (
-                        <div className="absolute left-[11px] top-6 w-0.5 h-18">
+                        <div className="absolute start-[11px] top-6 w-0.5 h-18">
                           <div
                             className={`w-full h-full transition-all duration-300 ${
                               isCompleted
@@ -1694,8 +1706,12 @@ export default function MultiStepForm() {
                       disabled={currentStep === 1}
                       className="flex items-center gap-2"
                     >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back
+                     {locale === "ar" ? (
+                       <ArrowRight className="h-4 w-4" />
+                     ) : (
+                       <ArrowLeft className="h-4 w-4" />
+                     )}
+                      {t("common.back")}
                     </Button>
 
                     {currentStep < steps.length ? (
@@ -1704,8 +1720,12 @@ export default function MultiStepForm() {
                         onClick={nextStep}
                         className="flex items-center gap-2"
                       >
-                        Continue
-                        <ArrowRight className="h-4 w-4" />
+                        {t("common.continue")}
+                        {locale === 'ar' ? (
+                          <ArrowLeft className="h-4 w-4" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4" />
+                        )}
                       </Button>
                     ) : (
                       <div className="flex gap-3">
@@ -1722,12 +1742,12 @@ export default function MultiStepForm() {
                           {isGeneratingPDF ? (
                             <>
                               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              Generating...
+                              {t("common.generating")}
                             </>
                           ) : (
                             <>
                               <Download className="h-4 w-4" />
-                              Download PDF
+                              {t("common.downloadPdf")}
                             </>
                           )}
                         </Button>

@@ -23,7 +23,7 @@ interface Page7Props {
 
 export default function VehiclesTablePage({ data }: Page7Props) {
     const vehicles = data.vehicles || [];
-    const rowsPerPage = 20;
+    const rowsPerPage = 25;
     const totalPages = Math.ceil(Math.max(vehicles.length, 1) / rowsPerPage);
 
     const renderTablePage = (pageIndex: number) => {
@@ -55,7 +55,7 @@ export default function VehiclesTablePage({ data }: Page7Props) {
                     <div>PetroChina - Security Department</div>
                     <div className="" dir="rtl">الى / شعبة التصاريح الامنية - ميسان - ممثلية الحلفايا / بتروجاينا - قسم الامن</div>
                     <div className="text-base font-bold text-red-600 mt-3">
-                        Vehicles List - العجلات
+                        Vehicles List - <span dir='rtl'>العجلات</span>
                         {totalPages > 1 && (
                             <span className="text-sm text-gray-600 ml-2">
                                 (Page {pageIndex + 1} of {totalPages})
@@ -65,26 +65,26 @@ export default function VehiclesTablePage({ data }: Page7Props) {
                 </div>
 
                 {/* Table */}
-                <div className="mb-6">
-                    <table className="w-full border-collapse border border-gray-400 text-[11px]">
+                <div className="mb-4">
+                    <table className="w-full border-collapse border border-gray-400 text-[9px]">
                         <thead>
                             <tr className="bg-gray-100">
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900 w-12">SN</th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900 w-8">SN</th>
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Vehicle number/Type</div>
-                                    <div className=" text-gray-700" dir="rtl">رقم العجلة - نوع الرقم</div>
+                                    <div className="text-gray-700" dir="rtl">رقم العجلة - نوع الرقم</div>
                                 </th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Vehicle brand/Type</div>
-                                    <div className=" text-gray-700" dir="rtl">نوع العجلة</div>
+                                    <div className="text-gray-700" dir="rtl">نوع العجلة</div>
                                 </th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Vehicle Color</div>
-                                    <div className=" text-gray-700" dir="rtl">لون العجلة</div>
+                                    <div className="text-gray-700" dir="rtl">لون العجلة</div>
                                 </th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Work Location</div>
-                                    <div className=" text-gray-700" dir="rtl">موقع العمل</div>
+                                    <div className="text-gray-700" dir="rtl">موقع العمل</div>
                                 </th>
                             </tr>
                         </thead>
@@ -94,11 +94,11 @@ export default function VehiclesTablePage({ data }: Page7Props) {
                                 const globalIndex = startIndex + index;
                                 return (
                                     <tr key={globalIndex} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                        <td className="border border-gray-400 p-2 text-center font-semibold text-gray-900">{globalIndex + 1}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{vehicle?.vehicleNumber || ''}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{vehicle?.vehicleType || ''}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{vehicle?.vehicleColor || ''}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{vehicle?.workLocation || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-center font-semibold text-gray-900">{globalIndex + 1}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{vehicle?.vehicleNumber || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{vehicle?.vehicleType || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{vehicle?.vehicleColor || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{vehicle?.workLocation || ''}</td>
                                     </tr>
                                 );
                             })}
@@ -108,7 +108,7 @@ export default function VehiclesTablePage({ data }: Page7Props) {
 
                 {/* Signature Section - Only on last page */}
                 {isLastPage && (
-                    <div className="absolute bottom-24 left-12">
+                    <div className="absolute bottom-24 left-16">
                         <div className="flex items-center mb-2 text-xs">
                             <span className="font-bold">Name:</span>
                             <div className=" ml-2">{data.managerName || ''}</div>

@@ -23,7 +23,7 @@ interface Page8Props {
 
 export default function WeaponsTablePage({ data }: Page8Props) {
     const weapons = data.weapons || [];
-    const rowsPerPage = 20;
+    const rowsPerPage = 25;
     const totalPages = Math.ceil(Math.max(weapons.length, 1) / rowsPerPage);
 
     const renderTablePage = (pageIndex: number) => {
@@ -55,7 +55,7 @@ export default function WeaponsTablePage({ data }: Page8Props) {
                     <div>PetroChina - Security Department</div>
                     <div className="" dir="rtl">الى / شعبة التصاريح الامنية - ميسان - ممثلية الحلفايا / بتروجاينا - قسم الامن</div>
                     <div className="text-base font-bold text-red-600 mt-3">
-                        الاسلحة - Weapon List
+                        <span dir='rtl'>الاسلحة</span> - Weapon List
                         {totalPages > 1 && (
                             <span className="text-sm text-gray-600 ml-2">
                                 (Page {pageIndex + 1} of {totalPages})
@@ -65,26 +65,26 @@ export default function WeaponsTablePage({ data }: Page8Props) {
                 </div>
 
                 {/* Table */}
-                <div className="mb-6">
-                    <table className="w-full border-collapse border border-gray-400 text-[11px]">
+                <div className="mb-4">
+                    <table className="w-full border-collapse border border-gray-400 text-[9px]">
                         <thead>
                             <tr className="bg-gray-100">
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900 w-12">SN</th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900 w-8">SN</th>
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Weapon Number</div>
-                                    <div className=" text-gray-700" dir="rtl">رقم السلاح</div>
+                                    <div className="text-gray-700" dir="rtl">رقم السلاح</div>
                                 </th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Weapon type</div>
-                                    <div className=" text-gray-700" dir="rtl">نوع السلاح</div>
+                                    <div className="text-gray-700" dir="rtl">نوع السلاح</div>
                                 </th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Licence ID</div>
-                                    <div className=" text-gray-700" dir="rtl">رقم اجازة السلاح</div>
+                                    <div className="text-gray-700" dir="rtl">رقم اجازة السلاح</div>
                                 </th>
-                                <th className="border border-gray-400 p-2 text-center font-bold text-gray-900">
+                                <th className="border border-gray-400 p-1 text-center font-bold text-gray-900">
                                     <div className="text-gray-900">Work Location</div>
-                                    <div className=" text-gray-700" dir="rtl">موقع العمل</div>
+                                    <div className="text-gray-700" dir="rtl">موقع العمل</div>
                                 </th>
                             </tr>
                         </thead>
@@ -94,11 +94,11 @@ export default function WeaponsTablePage({ data }: Page8Props) {
                                 const globalIndex = startIndex + index;
                                 return (
                                     <tr key={globalIndex} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                        <td className="border border-gray-400 p-2 text-center font-semibold text-gray-900">{globalIndex + 1}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{weapon?.weaponNumber || ''}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{weapon?.weaponType || ''}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{weapon?.licenceId || ''}</td>
-                                        <td className="border border-gray-400 p-2 text-gray-900">{weapon?.workLocation || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-center font-semibold text-gray-900">{globalIndex + 1}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{weapon?.weaponNumber || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{weapon?.weaponType || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{weapon?.licenceId || ''}</td>
+                                        <td className="border border-gray-400 p-1 text-gray-900">{weapon?.workLocation || ''}</td>
                                     </tr>
                                 );
                             })}
@@ -108,7 +108,7 @@ export default function WeaponsTablePage({ data }: Page8Props) {
 
                 {/* Signature Section - Only on last page */}
                 {isLastPage && (
-                    <div className="absolute bottom-24 left-12">
+                    <div className="absolute bottom-24 left-16">
                         <div className="flex items-center mb-2 text-xs">
                             <span className="font-bold">Name:</span>
                             <div className=" ml-2">{data.managerName || ''}</div>
