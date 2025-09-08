@@ -9,6 +9,7 @@ import InternationalStaffTablePage from './pdf-pages/InternationalStaffTablePage
 import LocalStaffTablePage from './pdf-pages/LocalStaffTablePage';
 import VehiclesTablePage from './pdf-pages/VehiclesTablePage';
 import WeaponsTablePage from './pdf-pages/WeaponsTablePage';
+import QRCodePage from './pdf-pages/QRCodePage';
 
 
 interface PDFTemplateProps {
@@ -117,6 +118,7 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
             <LocalStaffTablePage data={data} />
             <VehiclesTablePage data={data} />
             <WeaponsTablePage data={data} />
+            <QRCodePage data={data} />
         </div>
     );
 }

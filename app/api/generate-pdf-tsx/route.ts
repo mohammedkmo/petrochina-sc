@@ -35,14 +35,12 @@ export async function POST(req: NextRequest) {
     /* Arabic text support */
     [dir="rtl"], .rtl {
       direction: rtl;
-      text-align: right;
       font-family: 'Noto Sans Arabic', 'Amiri', sans-serif;
     }
     
     .arabic {
       font-family: 'Noto Sans Arabic', 'Amiri', sans-serif;
       direction: rtl;
-      text-align: right;
       unicode-bidi: bidi-override;
     }
     
