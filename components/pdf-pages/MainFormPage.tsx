@@ -50,7 +50,7 @@ export default function MainFormPage({ data }: Page1Props) {
                             <div className="flex-1 font-bold">{data.companyNameEnglish || ''}</div>
                         </div>
                     </div>
-                    <div dir="rtl">
+                    <div dir="rtl" className="arabic">
                         <div className="flex items-center text-xs gap-2">
                             <span className="font-bold">اسم الشركة:</span>
                             <div className=" flex-1 font-bold">{data.companyNameArabic || ''}</div>
@@ -94,7 +94,7 @@ export default function MainFormPage({ data }: Page1Props) {
                             </div>
                         </div>
                     </div>
-                    <div dir="rtl" className="p-2 border-black flex-1">
+                    <div dir="rtl" className="p-2 border-black flex-1 arabic">
                         <div className=" text-xs">
                             <span className="font-bold">نوع موافقة الدخول:</span>
                             <div className='flex items-center justify-between mt-2 px-2'>
@@ -138,7 +138,7 @@ export default function MainFormPage({ data }: Page1Props) {
                             <div className="flex-1 mt-2">{data.contractSubjectEnglish || ''}</div>
                         </div>
                     </div>
-                    <div dir="rtl" className="p-2 flex-1">
+                    <div dir="rtl" className="p-2 flex-1 arabic">
                         <div className=" text-xs">
                             <span className="font-bold">موضوع العقد:</span>
                             <div className="flex-1 mt-2">{data.contractSubjectArabic || ''}</div>
@@ -154,7 +154,7 @@ export default function MainFormPage({ data }: Page1Props) {
                             <div className="flex-1 mt-2">{data.contractedWithEnglish || ''}</div>
                         </div>
                     </div>
-                    <div dir="rtl" className="p-2 flex-1">
+                    <div dir="rtl" className="p-2 flex-1 arabic">
                         <div className=" text-xs">
                             <span className="font-bold">متعاقد مع ( القسم / الشركة )</span>
                             <div className="flex-1 mt-2">{data.contractedWithArabic || ''}</div>
@@ -177,7 +177,7 @@ export default function MainFormPage({ data }: Page1Props) {
                             <div className="flex-1">{data.endDate || ''}</div>
                         </div>
                     </div>
-                    <div dir="rtl" className="flex-1 p-2">
+                    <div dir="rtl" className="flex-1 p-2 arabic">
                         <div className="text-xs">
                             <span className="font-bold">فترة العقد:</span>
                         </div>
@@ -212,7 +212,7 @@ export default function MainFormPage({ data }: Page1Props) {
 
                     {/* Focal Point Name & Phone No. (Arabic) */}
                     <div className="gap-4 p-2 flex-1 space-y-2">
-                        <div dir="rtl">
+                        <div dir="rtl" className="arabic">
                             <div className="flex items-start text-xs gap-2">
                                 <span className="font-bold">اسم المخول:</span>
                                 <div className="flex-1">{data.authorizedPersonNameArabic || ''}</div>
@@ -241,17 +241,19 @@ export default function MainFormPage({ data }: Page1Props) {
                     </div>
                 </div>
 
-                {/* Purpose of entry/ */}
-                <div className="border-b border-black flex gap-4">
-                    <div className="border-r border-black p-2 flex-1">
-                        <div className="text-xs text-red-600 font-bold">Purpose of entry/</div>
-                        <div className="text-xs min-h-12">{data.purposeOfEntry || ''}</div>
+                {/* Purpose of entry - Only show when clearance type is not Permanent */}
+                {data.clearanceType !== 'Permanent' && (
+                    <div className="border-b border-black flex gap-4">
+                        <div className="border-r border-black p-2 flex-1">
+                            <div className="text-xs text-red-600 font-bold">Purpose of entry/</div>
+                            <div className="text-xs min-h-12">{data.purposeOfEntry || ''}</div>
+                        </div>
+                        <div dir="rtl" className="p-2 flex-1 arabic">
+                            <div className="text-xs text-red-600 font-bold">الغرض من الدخول\</div>
+                            <div className="text-xs min-h-12">{data.purposeOfEntryArabic || ''}</div>
+                        </div>
                     </div>
-                    <div dir="rtl" className="p-2 flex-1">
-                        <div className="text-xs text-red-600 font-bold">الغرض من الدخول\</div>
-                        <div className="text-xs min-h-12">{data.purposeOfEntryArabic || ''}</div>
-                    </div>
-                </div>
+                )}
 
                 {data.clearanceType === 'Permanent' ? (
                     <div>

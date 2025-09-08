@@ -85,19 +85,19 @@ export default function SecurityClearanceRequestPage({ data }: Page2Props) {
             <div className="border-t border-black my-4"></div>
 
             {/* Arabic Header */}
-            <div className="text-center mb-4 text-sm font-bold leading-tight" dir="rtl">
+            <div className="text-center mb-4 text-sm font-bold leading-tight arabic" dir="rtl">
                 <div dir="rtl">الى / شعبة التصاريح الامنية - ميسان / بتروجاينا - قسم الامن</div>
                 <div>م / طلب اصدار تصريح امني {clearanceTypeArabic(data.clearanceType || '')}</div>
                 <div className='mt-4'>لمدة <span className="inline-block mx-1 align-bottom">{data.duration || ''}</span> يوم / ايام</div>
             </div>
 
             {/* Arabic Content */}
-            <div className="mb-4 text-xs leading-relaxed" dir="rtl">
+            <div className="mb-4 text-xs leading-relaxed arabic" dir="rtl">
                 نحن الموقعون ادناه شركه (<span className="mx-1 font-bold">{data.companyNameArabic || ''}</span>) والمتعاقدة مع (<span className="mx-1 font-bold">{data.contractedWithArabic || ''}</span>) بموجب العقد (<span className="mx-1 font-bold">{data.contractNumber || ''}</span>) يرجى التفضل بالموافقة على اصدار طلب تصريح امني لكادر شركتنا للغرض الدخول الى حقل الحفاية النفطي .. مع التقدير
             </div>
 
             {/* Arabic Numbers Section */}
-            <div className="mb-4" dir="rtl">
+            <div className="mb-4 arabic" dir="rtl">
                 <div className="flex items-center mb-2 text-xs">
                     <span className="font-simibold">عدد العراقيين :</span>
                     <div className="mr-2">{data.numberOfIraqis || ''}</div>

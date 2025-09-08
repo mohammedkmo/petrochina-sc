@@ -83,18 +83,18 @@ export default function PledgeLetterPage({ data }: Page4Props) {
             <div className="border-t border-black my-4"></div>
 
             {/* Arabic Header */}
-            <div className="text-center mb-4 text-sm font-bold leading-tight" dir="rtl">
+            <div className="text-center mb-4 text-sm font-bold leading-tight arabic" dir="rtl">
                 <div>الى / مكتب التصاريح الامنية - ميسان / بتروجاينا - قسم الامن</div>
                 <div>م / تعهد</div>
             </div>
 
             {/* Arabic Content */}
-            <div className="mb-4 text-xs leading-relaxed" dir="rtl">
+            <div className="mb-4 text-xs leading-relaxed arabic" dir="rtl">
                 نحن الموقعون ادناه شركه (<span className="mx-1 font-bold">{data.companyNameArabic || ''}</span>) والمتعاقدة مع (<span className="mx-1 font-bold">{data.contractedWithArabic || ''}</span>) بموجب العقد (<span className="mx-1 font-bold">{data.contractNumber || ''}</span>) نتعهد بصحه المعلومات والاعداد والتفاصيل المقدمة لغرض الحصول تصريح امني (<span className="mx-1 font-bold">{clearanceTypeArabic(data.clearanceType || '')}</span>) وان جميعها صحيحه ومطابقه لاحتياجات عقد العمل في حقل الحلفايا النفطي ولاجله وقعنا .
             </div>
 
             {/* Arabic Numbers Section */}
-            <div className="mb-4" dir="rtl">
+            <div className="mb-4 arabic" dir="rtl">
                 <div className="flex items-center mb-2 text-xs">
                     <span className="font-bold">عدد العراقيين:</span>
                     <div className="mr-2">{data.numberOfIraqis || ''}</div>

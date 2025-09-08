@@ -68,7 +68,7 @@ export default function LongTermPledgeLetterPage({ data }: LongTermPledgeLetterP
 
             {/* Arabic Pledge Statement */}
             <div className="mb-8">
-                <div className="text-sm leading-relaxed" dir="rtl">
+                <div className="text-sm leading-relaxed arabic" dir="rtl">
                     <div className="mb-4">
                         نحن الموقعون ادناه شركه (
                         <span className="mx-2 font-bold">{data.companyNameArabic || ''}</span>

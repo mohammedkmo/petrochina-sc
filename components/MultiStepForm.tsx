@@ -72,9 +72,9 @@ const formSchema = z.object({
   // Focal Point
   fpPhone: z.string().min(1, "Phone number is required"),
 
-  // Purpose
-  purposeOfEntry: z.string().min(1, "Purpose of entry is required"),
-  purposeOfEntryArabic: z.string().min(1, "الغرض من الدخول مطلوب"),
+  // Purpose (conditional based on clearance type)
+  purposeOfEntry: z.string().optional(),
+  purposeOfEntryArabic: z.string().optional(),
 
   // Authorized Person (missing fields in template)
   authorizedPersonName: z.string().min(1, "Authorized person name is required"),
@@ -86,6 +86,24 @@ const formSchema = z.object({
 
   // Letter Header
   headerImageUrl: z.string().optional(),
+}).refine((data) => {
+  // Purpose of entry is required only when clearance type is not Permanent
+  if (data.clearanceType !== "Permanent") {
+    return data.purposeOfEntry && data.purposeOfEntry.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Purpose of entry is required",
+  path: ["purposeOfEntry"]
+}).refine((data) => {
+  // Purpose of entry Arabic is required only when clearance type is not Permanent
+  if (data.clearanceType !== "Permanent") {
+    return data.purposeOfEntryArabic && data.purposeOfEntryArabic.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "الغرض من الدخول مطلوب",
+  path: ["purposeOfEntryArabic"]
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -956,7 +974,7 @@ export default function MultiStepForm() {
                       htmlFor="startingDate"
                       className="text-sm font-medium"
                     >
-                      Starting Date
+                      Contract Starting Date
                     </Label>
                     <Input
                       id="startingDate"
@@ -973,7 +991,7 @@ export default function MultiStepForm() {
 
                   <div>
                     <Label htmlFor="endDate" className="text-sm font-medium">
-                      End Date
+                      Contract End Date
                     </Label>
                     <Input
                       id="endDate"
@@ -1188,50 +1206,53 @@ export default function MultiStepForm() {
                     </div>
                   </div>
 
-                  <div className="md:col-span-2 lg:col-span-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label
-                          htmlFor="purposeOfEntry"
-                          className="text-sm font-medium"
-                        >
-                          Purpose of Entry (English)
-                        </Label>
-                        <Textarea
-                          id="purposeOfEntry"
-                          {...register("purposeOfEntry")}
-                          placeholder="Describe the purpose of entry in English"
-                          className="mt-1 min-h-[100px]"
-                        />
-                        {errors.purposeOfEntry && (
-                          <p className="text-destructive text-sm mt-1">
-                            {errors.purposeOfEntry.message}
-                          </p>
-                        )}
-                      </div>
+                  {/* Purpose of Entry - Only show when clearance type is not Permanent */}
+                  {watchedFields.clearanceType !== "Permanent" && (
+                    <div className="md:col-span-2 lg:col-span-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <Label
+                            htmlFor="purposeOfEntry"
+                            className="text-sm font-medium"
+                          >
+                            Purpose of Entry (English)
+                          </Label>
+                          <Textarea
+                            id="purposeOfEntry"
+                            {...register("purposeOfEntry")}
+                            placeholder="Describe the purpose of entry in English"
+                            className="mt-1 min-h-[100px]"
+                          />
+                          {errors.purposeOfEntry && (
+                            <p className="text-destructive text-sm mt-1">
+                              {errors.purposeOfEntry.message}
+                            </p>
+                          )}
+                        </div>
 
-                      <div>
-                        <Label
-                          htmlFor="purposeOfEntryArabic"
-                          className="text-sm font-medium"
-                        >
-                          الغرض من الدخول (عربي)
-                        </Label>
-                        <Textarea
-                          id="purposeOfEntryArabic"
-                          {...register("purposeOfEntryArabic")}
-                          placeholder="اكتب الغرض من الدخول بالعربية"
-                          dir="rtl"
-                          className="mt-1 min-h-[100px]"
-                        />
-                        {errors.purposeOfEntryArabic && (
-                          <p className="text-destructive text-sm mt-1">
-                            {errors.purposeOfEntryArabic.message}
-                          </p>
-                        )}
+                        <div>
+                          <Label
+                            htmlFor="purposeOfEntryArabic"
+                            className="text-sm font-medium"
+                          >
+                            الغرض من الدخول (عربي)
+                          </Label>
+                          <Textarea
+                            id="purposeOfEntryArabic"
+                            {...register("purposeOfEntryArabic")}
+                            placeholder="اكتب الغرض من الدخول بالعربية"
+                            dir="rtl"
+                            className="mt-1 min-h-[100px]"
+                          />
+                          {errors.purposeOfEntryArabic && (
+                            <p className="text-destructive text-sm mt-1">
+                              {errors.purposeOfEntryArabic.message}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -1568,7 +1589,7 @@ export default function MultiStepForm() {
                     >
                       {/* Enhanced Connector Line */}
                       {idx !== steps.length - 1 && (
-                        <div className="absolute left-[11px] top-6 w-0.5 h-14">
+                        <div className="absolute left-[11px] top-6 w-0.5 h-18">
                           <div
                             className={`w-full h-full transition-all duration-300 ${
                               isCompleted

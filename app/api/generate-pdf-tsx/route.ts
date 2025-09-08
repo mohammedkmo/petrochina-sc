@@ -22,14 +22,28 @@ export async function POST(req: NextRequest) {
   <title>Security Clearance Forms</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Roboto:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Roboto:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;700&display=swap');
     
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Roboto', 'Noto Sans Arabic', sans-serif;
     }
     
     .font-serif {
-      font-family: 'Amiri', serif;
+      font-family: 'Amiri', 'Noto Sans Arabic', serif;
+    }
+    
+    /* Arabic text support */
+    [dir="rtl"], .rtl {
+      direction: rtl;
+      text-align: right;
+      font-family: 'Noto Sans Arabic', 'Amiri', sans-serif;
+    }
+    
+    .arabic {
+      font-family: 'Noto Sans Arabic', 'Amiri', sans-serif;
+      direction: rtl;
+      text-align: right;
+      unicode-bidi: bidi-override;
     }
     
     @media print {
@@ -40,6 +54,12 @@ export async function POST(req: NextRequest) {
       .break-after-page {
         page-break-after: always;
       }
+      
+      /* Ensure Arabic fonts are loaded for print */
+      * {
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+      }
     }
   </style>
 </head>
@@ -49,12 +69,18 @@ export async function POST(req: NextRequest) {
 </html>
     `;
 
-    // Launch Puppeteer with Vercel-compatible configuration
-    const browser = await puppeteer.launch({
+    // Launch Puppeteer with environment-specific configuration
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    const browser = await puppeteer.launch(isProduction ? {
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
+    } : {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
     });
     
     const page = await browser.newPage();
