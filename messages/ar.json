@@ -1,5 +1,7 @@
 {
   "common": {
+    "companyName": "بتروجاينا",
+    "department":"قسم الامن",
     "title": "طلب التصريح الأمني",
     "next": "التالي",
     "previous": "السابق",
@@ -43,7 +45,7 @@
       },
       "management": {
         "title": "معلومات الإدارة",
-        "description": "قدم معلومات الإدارة والأشخاص المخولين"
+        "description": "قدم معلومات الإدارة"
       },
       "authorized": {
         "title": "الأشخاص المخولون",
@@ -51,7 +53,7 @@
       },
       "review": {
         "title": "مراجعة",
-        "description": "راجع جميع المعلومات",
+        "description": "راجع جميع المعلومات قبل الإرسال",
         "clearanceTypeTitle": "نوع التصريح",
         "companyInformation": "معلومات الشركة",
         "contractDetails": "تفاصيل العقد",
@@ -71,6 +73,47 @@
         "readyToGenerate": "جاهز لإنشاء المستندات",
         "allInfoReviewed": "تم مراجعة جميع المعلومات. انقر على \"تحميل PDF\" لإنشاء مستندات التصريح الأمني.",
         "pleaseReviewInfo": "يرجى مراجعة جميع المعلومات قبل إنشاء المستندات"
+      }
+    },
+    "file_upload": {
+      "title": "استيراد البيانات",
+      "description": "رفع ملفات Excel أو CSV لاستيراد بياناتك",
+      "drag_drop": "اسحب وأفلت ملفك هنا، أو انقر للتصفح",
+      "drop_here": "أفلت ملفك هنا",
+      "processing": "جاري معالجة الملف...",
+      "supported_formats": "التنسيقات المدعومة",
+      "rows_imported": "تم استيراد {count} صف",
+      "upload_success": "تم رفع الملف بنجاح",
+      "upload_error": "خطأ في رفع الملف",
+      "invalid_format": "تنسيق ملف غير صالح",
+      "file_too_large": "الملف كبير جداً",
+      "no_data": "لم يتم العثور على بيانات في الملف",
+      "missing_columns": "أعمدة مطلوبة مفقودة",
+      "validation_errors": "تم العثور على أخطاء في التحقق من البيانات",
+      "weapons_data": "بيانات الأسلحة",
+      "vehicles_data": "بيانات المركبات",
+      "international_staff_data": "بيانات الموظفين الدوليين",
+      "local_staff_data": "بيانات الموظفين المحليين",
+      "no_uploads_needed": "لا توجد ملفات مطلوبة للرفع",
+      "set_counts_first": "يرجى تحديد الأعداد أولاً في الخطوات السابقة",
+      "download_template": "تحميل القالب"
+    },
+    "tables": {
+      "weapons": {
+        "title": "الأسلحة",
+        "import_help": "استيراد بيانات الأسلحة من ملف Excel أو CSV"
+      },
+      "vehicles": {
+        "title": "المركبات",
+        "import_help": "استيراد بيانات المركبات من ملف Excel أو CSV"
+      },
+      "international_staff": {
+        "title": "الموظفون الدوليون",
+        "import_help": "استيراد بيانات الموظفين الدوليين من ملف Excel أو CSV"
+      },
+      "local_staff": {
+        "title": "الموظفون المحليون",
+        "import_help": "استيراد بيانات الموظفين المحليين من ملف Excel أو CSV"
       }
     },
     "clearanceType": {
@@ -113,8 +156,8 @@
       "numberOfWeapons": "عدد الأسلحة",
       "fromDate": "من تاريخ",
       "toDate": "إلى تاريخ",
-      "startingDate": "تاريخ البداية",
-      "endDate": "تاريخ الانتهاء",
+      "startingDate": "تاريخ بداية العقد",
+      "endDate": "تاريخ نهاية العقد",
       "contractPeriod": "فترة العقد",
       "numberOfDays": "عدد الأيام",
       "authorizedPersonName": "اسم الشخص المخول",
@@ -150,8 +193,8 @@
       "companyNameArabic": "اسم الشركة (عربي)",
       "contactInfo": "معلومات الاتصال",
       "contractNumber": "رقم العقد",
-      "startingDate": "تاريخ البداية",
-      "endDate": "تاريخ النهاية"
+      "startingDate": "تاريخ بداية العقد",
+      "endDate": "تاريخ نهاية العقد"
     },
     "placeholders": {
       "duration": "مثال: 0",
@@ -221,10 +264,9 @@
     "projectLocationRequired": "موقع المشروع مطلوب",
     "projectLocationArabicRequired": "موقع المشروع بالعربية مطلوب",
     "purposeOfEntryRequired": "الغرض من الدخول مطلوب",
-    "imageDimensionsTooSmall": "أبعاد الصورة صغيرة جداً. الحد الأدنى: 680x96 بكسل لشعار الشركة",
-      "pdfGenerationFailed": "فشل في إنشاء ملف PDF",
-      "entryApprovalTypeRequired": "نوع موافقة الدخول مطلوب",
-      "failedToGeneratePdf": "فشل في إنشاء ملف PDF",
+    "pdfGenerationFailed": "فشل في إنشاء ملف PDF",
+    "entryApprovalTypeRequired": "نوع موافقة الدخول مطلوب",
+    "failedToGeneratePdf": "فشل في إنشاء ملف PDF",
     "errorGeneratingPdfPreview": "خطأ في إنشاء معاينة PDF. يرجى المحاولة مرة أخرى.",
     "fileSizeTooLarge": "حجم الملف كبير جداً. يجب أن يكون أقل من 10 ميجابايت",
     "imageDimensionsTooSmall": "أبعاد الصورة صغيرة جداً. الحد الأدنى: 680x96 بكسل لشعار الرأسية",

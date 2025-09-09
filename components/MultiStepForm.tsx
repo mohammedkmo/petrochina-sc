@@ -26,6 +26,8 @@ import Logo from "./logo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLocale } from "next-intl";
 import { clearanceTypeArabic } from "@/lib/clearance-type";
+import FileUpload from "./FileUpload";
+import { TableData } from "@/lib/file-parser";
 
 // Form Schema - will be created inside component to access translations
 const createFormSchema = (t: (key: string) => string) =>
@@ -94,6 +96,12 @@ const createFormSchema = (t: (key: string) => string) =>
 
       // Letter Header
       headerImageUrl: z.string().min(1, t("validation.headerImageRequired")),
+
+      // Table Data
+      weaponsData: z.array(z.any()).optional(),
+      vehiclesData: z.array(z.any()).optional(),
+      internationalStaffData: z.array(z.any()).optional(),
+      localStaffData: z.array(z.any()).optional(),
     })
     .refine(
       (data) => {
@@ -177,6 +185,27 @@ export default function MultiStepForm() {
   const steps = getSteps(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [headerImageUrl, setHeaderImageUrl] = useState<string>("");
+  
+  // Table data state
+  const [tableData, setTableData] = useState<{
+    weapons: TableData[];
+    vehicles: TableData[];
+    international_staff: TableData[];
+    local_staff: TableData[];
+  }>({
+    weapons: [],
+    vehicles: [],
+    international_staff: [],
+    local_staff: []
+  });
+
+  // Handler for file import
+  const handleFileImport = (data: TableData[], tableType: string) => {
+    setTableData(prev => ({
+      ...prev,
+      [tableType]: data
+    }));
+  };
 
   const {
     register,
@@ -425,6 +454,10 @@ export default function MultiStepForm() {
     const formData = {
       ...data,
       headerImageUrl,
+      weaponsData: tableData.weapons,
+      vehiclesData: tableData.vehicles,
+      internationalStaffData: tableData.international_staff,
+      localStaffData: tableData.local_staff,
     };
 
     console.log("Form submitted:", formData);
@@ -582,7 +615,7 @@ export default function MultiStepForm() {
                     }}
                   >
                     <div
-                      className={`border rounded-lg p-6 text-center transition-all duration-200 ${
+                      className={`border h-full rounded-lg p-6 text-center transition-all duration-200 ${
                         watchedFields.clearanceType === type.value
                           ? "border-foreground bg-muted/50"
                           : "border-border hover:border-muted-foreground"
@@ -1303,6 +1336,75 @@ export default function MultiStepForm() {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* File Upload Section */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">{t("form.file_upload.title")}</h3>
+                <p className="text-sm text-muted-foreground mb-6">{t("form.file_upload.description")}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {parseInt(watchedFields.numberOfWeapons || '0') > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.weapons_data")}</h4>
+                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.weapons.import_help")}</p>
+                        <FileUpload
+                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'weapons')}
+                          tableType="weapons"
+                        />
+                      </div>
+                    )}
+                     
+                    {parseInt(watchedFields.numberOfVehicles || '0') > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.vehicles_data")}</h4>
+                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.vehicles.import_help")}</p>
+                        <FileUpload
+                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'vehicles')}
+                          tableType="vehicles"
+                        />
+                      </div>
+                    )}
+                     
+                    {parseInt(watchedFields.numberOfInternationals || '0') > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.international_staff_data")}</h4>
+                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.international_staff.import_help")}</p>
+                        <FileUpload
+                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'international_staff')}
+                          tableType="international_staff"
+                        />
+                      </div>
+                    )}
+                     
+                    {parseInt(watchedFields.numberOfIraqis || '0') > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.local_staff_data")}</h4>
+                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.local_staff.import_help")}</p>
+                        <FileUpload
+                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'local_staff')}
+                          tableType="local_staff"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Show message when no uploads are needed */}
+                  {parseInt(watchedFields.numberOfWeapons || '0') === 0 && 
+                   parseInt(watchedFields.numberOfVehicles || '0') === 0 && 
+                   parseInt(watchedFields.numberOfInternationals || '0') === 0 && 
+                   parseInt(watchedFields.numberOfIraqis || '0') === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p className="text-sm">{t("form.file_upload.no_uploads_needed")}</p>
+                      <p className="text-xs mt-1">{t("form.file_upload.set_counts_first")}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         );
 
@@ -1570,7 +1672,7 @@ export default function MultiStepForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#c6e0ff] to-[#ecf5ff] py-10 flex items-center justify-center">
-      <div className="mx-auto w-5xl px-4 h-[90vh]">
+      <div className="mx-auto w-6xl px-4 h-[90vh]">
         <div className="rounded-2xl bg-white h-full flex flex-col">
           {/* Top Bar */}
           <div className="flex items-center justify-between border-b border-blue-100 px-4 py-3 md:px-6 flex-shrink-0">
@@ -1579,7 +1681,7 @@ export default function MultiStepForm() {
               className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2"
             >
               <Logo width={25} height={25} />
-              <span>Petrochina - Security Department</span>
+              <h1 className="font-bold">{t("common.companyName")} - {t("common.department")} / {t("common.title") }</h1>
             </button>
 
             <LanguageSwitcher />
@@ -1588,7 +1690,7 @@ export default function MultiStepForm() {
           {/* Main Content */}
           <div className="flex flex-1 min-h-0">
             {/* Left Rail - Vertical Stepper */}
-            <aside className="border-e border-blue-100 p-8 w-2/6 overflow-y-auto">
+            <aside className="border-e border-blue-100 p-8  overflow-y-auto">
               <ol className="relative space-y-6">
                 {steps.map((step, idx) => {
                   const isActive = currentStep === step.id;
@@ -1601,7 +1703,7 @@ export default function MultiStepForm() {
                     >
                       {/* Enhanced Connector Line */}
                       {idx !== steps.length - 1 && (
-                        <div className="absolute start-[11px] top-6 w-0.5 h-18">
+                        <div className="absolute start-[11px] top-6 w-0.5 h-16">
                           <div
                             className={`w-full h-full transition-all duration-300 ${
                               isCompleted

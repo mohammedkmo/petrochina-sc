@@ -22,26 +22,32 @@ export async function POST(req: NextRequest) {
   <title>Security Clearance Forms</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Roboto:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;700&display=swap');
+
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400..700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap');
     
     body {
-      font-family: 'Roboto', 'Noto Sans Arabic', sans-serif;
+      font-family: "Merriweather", "Noto Naskh Arabic", serif;
     }
     
     .font-serif {
-      font-family: 'Amiri', 'Noto Sans Arabic', serif;
+      font-family: "Merriweather", "Noto Naskh Arabic", serif;
     }
     
     /* Arabic text support */
     [dir="rtl"], .rtl {
       direction: rtl;
-      font-family: 'Noto Sans Arabic', 'Amiri', sans-serif;
+      font-family: "Noto Naskh Arabic", "Merriweather", serif;
     }
     
     .arabic {
-      font-family: 'Noto Sans Arabic', 'Amiri', sans-serif;
+      font-family: "Noto Naskh Arabic", "Merriweather", serif;
       direction: rtl;
       unicode-bidi: bidi-override;
+      font-weight: 500;
+      line-height: 2.0;
+      letter-spacing: 0.5px;
+      text-rendering: optimizeLegibility;
     }
     
     @media print {

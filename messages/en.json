@@ -1,5 +1,7 @@
 {
   "common": {
+    "companyName":"Petrochina",
+    "department": "Security Department",
     "title": "Security Clearance Application",
     "next": "Next",
     "previous": "Previous",
@@ -43,7 +45,7 @@
       },
       "management": {
         "title": "Management Information",
-        "description": "Provide management and authorized personnel details"
+        "description": "Provide management details"
       },
       "authorized": {
         "title": "Authorized Personnel",
@@ -51,7 +53,7 @@
       },
       "review": {
         "title": "Review",
-        "description": "Review all information",
+        "description": "Review all information before submission",
         "clearanceTypeTitle": "Clearance Type",
         "companyInformation": "Company Information",
         "contractDetails": "Contract Details",
@@ -71,6 +73,47 @@
         "readyToGenerate": "Ready to Generate Documents",
         "allInfoReviewed": "All information has been reviewed. Click \"Download PDF\" to generate your security clearance documents.",
         "pleaseReviewInfo": "Please review all information before generating your documents"
+      }
+    },
+    "file_upload": {
+      "title": "Import Data",
+      "description": "Upload Excel or CSV files to import your data",
+      "drag_drop": "Drag and drop your file here, or click to browse",
+      "drop_here": "Drop your file here",
+      "processing": "Processing file...",
+      "supported_formats": "Supported formats",
+      "rows_imported": "{count} rows imported",
+      "upload_success": "File uploaded successfully",
+      "upload_error": "Error uploading file",
+      "invalid_format": "Invalid file format",
+      "file_too_large": "File is too large",
+      "no_data": "No data found in file",
+      "missing_columns": "Missing required columns",
+      "validation_errors": "Data validation errors found",
+      "weapons_data": "Weapons Data",
+      "vehicles_data": "Vehicles Data",
+      "international_staff_data": "International Staff Data",
+      "local_staff_data": "Local Staff Data",
+      "no_uploads_needed": "No uploads needed",
+      "set_counts_first": "Please set the counts first in the previous steps",
+      "download_template": "Download Template"
+    },
+    "tables": {
+      "weapons": {
+        "title": "Weapons",
+        "import_help": "Import weapons data from Excel or CSV file"
+      },
+      "vehicles": {
+        "title": "Vehicles",
+        "import_help": "Import vehicles data from Excel or CSV file"
+      },
+      "international_staff": {
+        "title": "International Staff",
+        "import_help": "Import international staff data from Excel or CSV file"
+      },
+      "local_staff": {
+        "title": "Local Staff",
+        "import_help": "Import local staff data from Excel or CSV file"
       }
     },
     "clearanceType": {
@@ -150,15 +193,13 @@
       "companyNameArabic": "Company Name (Arabic)",
       "contactInfo": "Contact Information",
       "contractNumber": "Contract Number",
-      "startingDate": "Starting Date",
-      "endDate": "End Date"
+      "startingDate": "Contract Starting Date",
+      "endDate": "Contract End Date"
     },
     "placeholders": {
       "duration": "e.g., 0",
       "contractedWithEnglish": "Enter contracted with in English",
       "contractedWithArabic": "أدخل المتعاقد مع بالعربية",
-      "contractSubjectEnglish": "Enter contract subject in English",
-      "contractSubjectArabic": "أدخل موضوع العقد بالعربية",
       "companyNameEnglish": "Enter company name in English",
       "companyNameArabic": "أدخل اسم الشركة بالعربية",
       "contactInfo": "Enter email address",

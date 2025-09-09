@@ -1,0 +1,6 @@
+weaponNumber,weaponType,licenceId,workLocation
+W001,Rifle,LIC-2023-001,Baghdad Main Base
+W002,Pistol,LIC-2023-002,Basra Security Office
+W003,Rifle,LIC-2023-003,Erbil Checkpoint
+W004,Shotgun,LIC-2023-004,Mosul Patrol Unit
+W005,Sniper Rifle,LIC-2023-005,Kirkuk Observation Post
