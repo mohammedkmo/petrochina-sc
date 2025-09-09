@@ -94,7 +94,6 @@ export async function POST(req: NextRequest) {
         '--disable-renderer-backgrounding',
         '--disable-ipc-flooding-protection',
         '--font-render-hinting=none',
-        '--disable-extensions',
         '--disable-plugins',
         '--disable-default-apps',
         '--disable-sync',
@@ -107,7 +106,7 @@ export async function POST(req: NextRequest) {
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
-      pipe: true,
+      protocolTimeout: 30000
     } : {
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
