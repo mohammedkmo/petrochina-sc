@@ -74,12 +74,22 @@ export async function POST(req: NextRequest) {
     `;
 
     // Launch Puppeteer with environment-specific configuration
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
     
     const browser = await puppeteer.launch(isProduction ? {
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath('/tmp'),
       headless: chromium.headless,
     } : {
       headless: true,
