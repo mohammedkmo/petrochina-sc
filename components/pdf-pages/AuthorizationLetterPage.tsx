@@ -74,7 +74,7 @@ export default function AuthorizationLetterPage({ data }: Page3Props) {
             {/* Arabic Content */}
             <div className="mb-4 text-xs leading-relaxed arabic" dir="rtl">
                 نحن شركة (<span className="mx-1 font-bold">{data.companyNameArabic || ''}</span>) المتعاقدون مع شركة (<span className="mx-1 font-bold">{data.contractedWithArabic || ''}</span>) بموجب العقد رقم (<span className="mx-1 font-bold">{data.contractNumber || ''}</span>) نخول السيد / السيدة (<span className="mx-1 font-bold">{data.authorizedPersonNameArabic || ''}</span>) حامل الهوية رقم (<span className="mx-1 font-bold">{data.authorizedPersonId || ''}</span>) بتمثيل شركتنا أمام مكتبكم الموقر في جميع الأمور المتعلقة بالتصاريح الأمنية، بما في ذلك تقديم الطلبات ومتابعتها واستلام الموافقات نيابة عنا.<br /><br />
-                يسري هذا التخويل من (<span className="mx-1 font-bold">{data.authorizationStartDate || ''}</span>) حتى (<span className="mx-1 font-bold">{data.authorizationEndDate || ''}</span>)، ما لم تلغه شركتنا كتابيًا.<br /><br />
+                يسري هذا التخويل من [<span className="mx-1 font-bold" dir="ltr">{data.authorizationStartDate || ''}</span>] حتى [<span className="mx-1 font-bold" dir="ltr">{data.authorizationEndDate || ''}</span>]، ما لم تلغه شركتنا كتابيًا.<br /><br />
                 لأي استفسارات بخصوص هذا التفويض، يُرجى التواصل معنا عبر [<span className="mx-1 font-bold" dir='ltr'>{data.contactInfo || ''}</span>].<br /><br />
                 مع خالص التحيات،
             </div>

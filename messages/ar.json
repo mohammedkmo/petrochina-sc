@@ -22,8 +22,9 @@
     "info": "معلومات",
     "back": "رجوع",
     "continue": "متابعة",
-    "downloadPdf": "تحميل PDF",
-    "generating": "جاري الإنشاء..."
+    "downloadPdf": "معاينة وطباعة PDF",
+    "generating": "جاري الإنشاء...",
+    "clearData": "إعادة تعيين"
   },
   "form": {
     "steps": {

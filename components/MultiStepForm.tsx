@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent } from "./ui/card";
+import PDFGenerator from "./PDFGenerator";
 import { Badge } from "./ui/badge";
 import {
   CheckCircle,
@@ -19,7 +20,8 @@ import {
   Users,
   CheckSquare,
   Upload,
-  Download,
+  Eye,
+  RefreshCcw,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Logo from "./logo";
@@ -185,7 +187,7 @@ export default function MultiStepForm() {
   const steps = getSteps(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [headerImageUrl, setHeaderImageUrl] = useState<string>("");
-  
+
   // Table data state
   const [tableData, setTableData] = useState<{
     weapons: TableData[];
@@ -201,10 +203,15 @@ export default function MultiStepForm() {
 
   // Handler for file import
   const handleFileImport = (data: TableData[], tableType: string) => {
-    setTableData(prev => ({
-      ...prev,
+    const newTableData = {
+      ...tableData,
       [tableType]: data
-    }));
+    };
+
+    setTableData(newTableData);
+
+    // Save to localStorage to persist across page navigation
+    localStorage.setItem('tableData', JSON.stringify(newTableData));
   };
 
   const {
@@ -299,12 +306,64 @@ export default function MultiStepForm() {
   };
 
   const [isDragOver, setIsDragOver] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [pdfData, setPdfData] = useState<Record<string, unknown> | null>(null);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
   const locale = useLocale()
+
+  // Load all form data from localStorage on component mount
+  useEffect(() => {
+    // Load table data
+    const savedTableData = localStorage.getItem('tableData');
+    if (savedTableData) {
+      try {
+        const parsedData = JSON.parse(savedTableData);
+        setTableData(parsedData);
+        console.log('Loaded table data from localStorage:', parsedData);
+      } catch (error) {
+        console.error('Error parsing saved table data:', error);
+      }
+    }
+
+    // Load header image
+    const savedHeaderImage = localStorage.getItem('headerImageUrl');
+    if (savedHeaderImage) {
+      setHeaderImageUrl(savedHeaderImage);
+      setValue("headerImageUrl", savedHeaderImage);
+    }
+
+    // Load form data
+    const savedFormData = localStorage.getItem('formData');
+    if (savedFormData) {
+      try {
+        const parsedFormData = JSON.parse(savedFormData);
+        // Set all form values
+        Object.keys(parsedFormData).forEach(key => {
+          setValue(key as keyof FormData, parsedFormData[key]);
+        });
+        console.log('Loaded form data from localStorage:', parsedFormData);
+      } catch (error) {
+        console.error('Error parsing saved form data:', error);
+      }
+    }
+  }, [setValue]);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    const subscription = watch((formData) => {
+      localStorage.setItem('formData', JSON.stringify(formData));
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
+  // Save header image to localStorage when it changes
+  useEffect(() => {
+    if (headerImageUrl) {
+      localStorage.setItem('headerImageUrl', headerImageUrl);
+    }
+  }, [headerImageUrl]);
 
   const handleImageUpload = (file: File) => {
     if (file && file.type.startsWith("image/")) {
@@ -316,7 +375,6 @@ export default function MultiStepForm() {
 
       setImageError(null);
       setIsUploading(true);
-      setUploadProgress(0);
 
       // Create image element to check dimensions
       const img = new Image();
@@ -360,14 +418,10 @@ export default function MultiStepForm() {
           setValue("headerImageUrl", result); // Update form field
           setImageError(null); // Clear any previous errors
           setIsUploading(false);
-          setUploadProgress(100);
         };
 
         reader.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const progress = (e.loaded / e.total) * 100;
-            setUploadProgress(progress);
-          }
+          // Progress tracking removed as uploadProgress state was removed
         };
 
         reader.readAsDataURL(file);
@@ -419,109 +473,42 @@ export default function MultiStepForm() {
   const removeImage = () => {
     setHeaderImageUrl("");
     setValue("headerImageUrl", ""); // Clear form field
-    setUploadProgress(0);
+    localStorage.removeItem('headerImageUrl');
   };
 
-  const previewPDF = async () => {
+  // Function to clear all saved data
+  const clearAllSavedData = () => {
+    localStorage.removeItem('formData');
+    localStorage.removeItem('tableData');
+    localStorage.removeItem('headerImageUrl');
+    setTableData({
+      weapons: [],
+      vehicles: [],
+      international_staff: [],
+      local_staff: []
+    });
+    setHeaderImageUrl("");
+    setValue("headerImageUrl", "");
+    console.log('All saved data cleared');
+  };
+
+  const onSubmit = () => {
+    // Set the form data for PDF generation
     const formData = {
       ...watchedFields,
       headerImageUrl,
-    };
-
-    try {
-      const response = await fetch("/api/generate-pdf-tsx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error(t("validation.failedToGeneratePdf"));
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, "_blank");
-    } catch (error) {
-      console.error("Error generating PDF preview:", error);
-      alert(t("validation.errorGeneratingPdfPreview"));
-    }
-  };
-
-  const onSubmit = async (data: FormData) => {
-    const formData = {
-      ...data,
-      headerImageUrl,
+      // Include table data from Excel imports
       weaponsData: tableData.weapons,
       vehiclesData: tableData.vehicles,
       internationalStaffData: tableData.international_staff,
       localStaffData: tableData.local_staff,
     };
 
-    console.log("Form submitted:", formData);
-    console.log("Form errors:", errors);
-    console.log("Form is valid:", Object.keys(errors).length === 0);
-
-    setIsGeneratingPDF(true);
-
-    try {
-      console.log("Starting PDF generation with data:", formData);
-
-      // Generate PDF
-      const response = await fetch("/api/generate-pdf-tsx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      console.log("PDF API response status:", response.status);
-      console.log("PDF API response headers:", response.headers);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("PDF API error response:", errorText);
-        throw new Error(
-          `${t("validation.failedToGeneratePdfWithStatus")}: ${response.status} - ${errorText}`
-        );
-      }
-
-      // Create blob and download
-      const blob = await response.blob();
-      console.log("PDF blob size:", blob.size, "bytes");
-
-      if (blob.size === 0) {
-        throw new Error(t("validation.generatedPdfEmpty"));
-      }
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = `security-clearance-${data.clearanceType
-        .toLowerCase()
-        .replace(/\s+/g, "-")}-${Date.now()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      // Show success message
-      alert(t("validation.pdfGeneratedSuccessfully"));
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : t("validation.unknownErrorOccurred");
-      alert(
-        `${t("validation.errorGeneratingPdfDetails")}: ${errorMessage}`
-      );
-    } finally {
-      setIsGeneratingPDF(false);
-    }
+    // Store data in a ref or state that PDFGenerator can access
+    setPdfData(formData);
+    setShowPDFPreview(true);
   };
+
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -595,11 +582,10 @@ export default function MultiStepForm() {
                 ].map((type) => (
                   <div
                     key={type.value}
-                    className={`relative cursor-pointer transition-all duration-200 rounded-lg ${
-                      watchedFields.clearanceType === type.value
-                        ? "ring-2 ring-foreground"
-                        : ""
-                    }`}
+                    className={`relative cursor-pointer transition-all duration-200 rounded-lg ${watchedFields.clearanceType === type.value
+                      ? "ring-2 ring-foreground"
+                      : ""
+                      }`}
                     onClick={() => {
                       setValue(
                         "clearanceType",
@@ -615,11 +601,10 @@ export default function MultiStepForm() {
                     }}
                   >
                     <div
-                      className={`border h-full rounded-lg p-6 text-center transition-all duration-200 ${
-                        watchedFields.clearanceType === type.value
-                          ? "border-foreground bg-muted/50"
-                          : "border-border hover:border-muted-foreground"
-                      }`}
+                      className={`border h-full rounded-lg p-6 text-center transition-all duration-200 ${watchedFields.clearanceType === type.value
+                        ? "border-foreground bg-muted/50"
+                        : "border-border hover:border-muted-foreground"
+                        }`}
                     >
                       <div className="flex flex-col items-center">
                         {type.icon}
@@ -658,109 +643,109 @@ export default function MultiStepForm() {
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {watchedFields.clearanceType === "Temporary" ||
-                  watchedFields.clearanceType === "Urgent"
+                    watchedFields.clearanceType === "Urgent"
                     ? t("form.entryApprovalType.autoDescription")
                     : t("form.entryApprovalType.description")}
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {[
-                    {
-                      value: "New",
-                      label: t("form.entryApprovalType.new"),
-                      icon: (
-                        <svg
-                          className="w-5 h-5 mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M12 4v16m8-8H4"
-                          />
-                        </svg>
-                      ),
-                    },
-                    {
-                      value: "Re-new",
-                      label: t("form.entryApprovalType.renew"),
-                      icon: (
-                        <svg
-                          className="w-5 h-5 mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                          />
-                        </svg>
-                      ),
-                    },
-                    {
-                      value: "Add",
-                      label: t("form.entryApprovalType.add"),
-                      icon: (
-                        <svg
-                          className="w-5 h-5 mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                          />
-                        </svg>
-                      ),
-                    },
-                    {
-                      value: "Cancel",
-                      label: t("form.entryApprovalType.cancel"),
-                      icon: (
-                        <svg
-                          className="w-5 h-5 mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      ),
-                    },
-                    {
-                      value: "Other",
-                      label: t("form.entryApprovalType.other"),
-                      icon: (
-                        <svg
-                          className="w-5 h-5 mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                      ),
-                    },
-                  ].map((opt) => {
+                  {
+                    value: "New",
+                    label: t("form.entryApprovalType.new"),
+                    icon: (
+                      <svg
+                        className="w-5 h-5 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: "Re-new",
+                    label: t("form.entryApprovalType.renew"),
+                    icon: (
+                      <svg
+                        className="w-5 h-5 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: "Add",
+                    label: t("form.entryApprovalType.add"),
+                    icon: (
+                      <svg
+                        className="w-5 h-5 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: "Cancel",
+                    label: t("form.entryApprovalType.cancel"),
+                    icon: (
+                      <svg
+                        className="w-5 h-5 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    ),
+                  },
+                  {
+                    value: "Other",
+                    label: t("form.entryApprovalType.other"),
+                    icon: (
+                      <svg
+                        className="w-5 h-5 mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    ),
+                  },
+                ].map((opt) => {
                   const isDisabled =
                     (watchedFields.clearanceType === "Temporary" ||
                       watchedFields.clearanceType === "Urgent") &&
@@ -769,15 +754,13 @@ export default function MultiStepForm() {
                   return (
                     <div
                       key={opt.value}
-                      className={`relative transition-all duration-200 rounded-lg ${
-                        isDisabled
-                          ? "cursor-not-allowed opacity-50"
-                          : "cursor-pointer"
-                      } ${
-                        watchedFields.entryApprovalType === opt.value
+                      className={`relative transition-all duration-200 rounded-lg ${isDisabled
+                        ? "cursor-not-allowed opacity-50"
+                        : "cursor-pointer"
+                        } ${watchedFields.entryApprovalType === opt.value
                           ? "ring-2 ring-foreground"
                           : ""
-                      }`}
+                        }`}
                       onClick={() => {
                         if (!isDisabled) {
                           setValue("entryApprovalType", opt.value);
@@ -785,13 +768,12 @@ export default function MultiStepForm() {
                       }}
                     >
                       <div
-                        className={`border rounded-lg p-4 text-center transition-all duration-200 ${
-                          watchedFields.entryApprovalType === opt.value
-                            ? "border-foreground bg-muted/50"
-                            : isDisabled
+                        className={`border rounded-lg p-4 text-center transition-all duration-200 ${watchedFields.entryApprovalType === opt.value
+                          ? "border-foreground bg-muted/50"
+                          : isDisabled
                             ? "border-border bg-muted/20"
                             : "border-border hover:border-muted-foreground"
-                        }`}
+                          }`}
                       >
                         <div className="flex flex-col items-center">
                           {opt.icon}
@@ -837,11 +819,10 @@ export default function MultiStepForm() {
 
                   {!headerImageUrl ? (
                     <div
-                      className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer ${
-                        isDragOver
-                          ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20"
-                          : "border-border hover:border-blue-300"
-                      }`}
+                      className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer ${isDragOver
+                        ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20"
+                        : "border-border hover:border-blue-300"
+                        }`}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
@@ -850,9 +831,8 @@ export default function MultiStepForm() {
                       }
                     >
                       <Upload
-                        className={`mx-auto h-8 w-8 mb-3 ${
-                          isDragOver ? "text-blue-500" : "text-muted-foreground"
-                        }`}
+                        className={`mx-auto h-8 w-8 mb-3 ${isDragOver ? "text-blue-500" : "text-muted-foreground"
+                          }`}
                       />
                       <p className="text-sm font-medium text-foreground mb-1">
                         {isDragOver
@@ -1336,72 +1316,72 @@ export default function MultiStepForm() {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* File Upload Section */}
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-medium mb-4">{t("form.file_upload.title")}</h3>
-                <p className="text-sm text-muted-foreground mb-6">{t("form.file_upload.description")}</p>
+                    <p className="text-sm text-muted-foreground mb-6">{t("form.file_upload.description")}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {parseInt(watchedFields.numberOfWeapons || '0') > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.weapons_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.weapons.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'weapons')}
+                          onDataImport={(data) => handleFileImport(data, 'weapons')}
                           tableType="weapons"
                         />
                       </div>
                     )}
-                     
+
                     {parseInt(watchedFields.numberOfVehicles || '0') > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.vehicles_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.vehicles.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'vehicles')}
+                          onDataImport={(data) => handleFileImport(data, 'vehicles')}
                           tableType="vehicles"
                         />
                       </div>
                     )}
-                     
+
                     {parseInt(watchedFields.numberOfInternationals || '0') > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.international_staff_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.international_staff.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'international_staff')}
+                          onDataImport={(data) => handleFileImport(data, 'international_staff')}
                           tableType="international_staff"
                         />
                       </div>
                     )}
-                     
+
                     {parseInt(watchedFields.numberOfIraqis || '0') > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.local_staff_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.local_staff.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data, fileName, tableType) => handleFileImport(data, 'local_staff')}
+                          onDataImport={(data) => handleFileImport(data, 'local_staff')}
                           tableType="local_staff"
                         />
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Show message when no uploads are needed */}
-                  {parseInt(watchedFields.numberOfWeapons || '0') === 0 && 
-                   parseInt(watchedFields.numberOfVehicles || '0') === 0 && 
-                   parseInt(watchedFields.numberOfInternationals || '0') === 0 && 
-                   parseInt(watchedFields.numberOfIraqis || '0') === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="text-sm">{t("form.file_upload.no_uploads_needed")}</p>
-                      <p className="text-xs mt-1">{t("form.file_upload.set_counts_first")}</p>
-                    </div>
-                  )}
+                  {parseInt(watchedFields.numberOfWeapons || '0') === 0 &&
+                    parseInt(watchedFields.numberOfVehicles || '0') === 0 &&
+                    parseInt(watchedFields.numberOfInternationals || '0') === 0 &&
+                    parseInt(watchedFields.numberOfIraqis || '0') === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="text-sm">{t("form.file_upload.no_uploads_needed")}</p>
+                        <p className="text-xs mt-1">{t("form.file_upload.set_counts_first")}</p>
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -1681,7 +1661,7 @@ export default function MultiStepForm() {
               className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2"
             >
               <Logo width={25} height={25} />
-              <h1 className="font-bold">{t("common.companyName")} - {t("common.department")} / {t("common.title") }</h1>
+              <h1 className="font-bold">{t("common.companyName")} - {t("common.department")} / {t("common.title")}</h1>
             </button>
 
             <LanguageSwitcher />
@@ -1705,13 +1685,12 @@ export default function MultiStepForm() {
                       {idx !== steps.length - 1 && (
                         <div className="absolute start-[11px] top-6 w-0.5 h-16">
                           <div
-                            className={`w-full h-full transition-all duration-300 ${
-                              isCompleted
-                                ? "bg-red-500"
-                                : isActive
+                            className={`w-full h-full transition-all duration-300 ${isCompleted
+                              ? "bg-red-500"
+                              : isActive
                                 ? "bg-gradient-to-b from-red-500 to-border"
                                 : "bg-border"
-                            }`}
+                              }`}
                           />
                         </div>
                       )}
@@ -1719,15 +1698,14 @@ export default function MultiStepForm() {
                       {/* Enhanced Bullet */}
                       <div className="relative z-10">
                         <span
-                          className={`flex h-6 w-6 shrink-0 mt-0.5 items-center justify-center rounded-full border-2 text-xs font-medium transition-all duration-300 ${
-                            isCompleted
-                              ? "bg-red-500 text-primary-foreground border-white ring-2 ring-red-500"
-                              : isActive
+                          className={`flex h-6 w-6 shrink-0 mt-0.5 items-center justify-center rounded-full border-2 text-xs font-medium transition-all duration-300 ${isCompleted
+                            ? "bg-red-500 text-primary-foreground border-white ring-2 ring-red-500"
+                            : isActive
                               ? "border-red-500 text-red-500 bg-red-50 ring-2 ring-red-500/20"
                               : isNext
-                              ? "border-border text-muted-foreground bg-background hover:border-primary/50 hover:text-primary/70 transition-colors"
-                              : "border-muted text-muted-foreground bg-red-500/30"
-                          }`}
+                                ? "border-border text-muted-foreground bg-background hover:border-primary/50 hover:text-primary/70 transition-colors"
+                                : "border-muted text-muted-foreground bg-red-500/30"
+                            }`}
                         >
                           {isCompleted ? (
                             <svg
@@ -1750,22 +1728,20 @@ export default function MultiStepForm() {
                       {/* Enhanced Labels */}
                       <div className="flex-1 min-w-0 pt-1">
                         <div
-                          className={`text-sm font-semibold transition-colors duration-200 ${
-                            isActive
-                              ? "text-foreground"
-                              : isCompleted
+                          className={`text-sm font-semibold transition-colors duration-200 ${isActive
+                            ? "text-foreground"
+                            : isCompleted
                               ? "text-foreground/90"
                               : "text-muted-foreground"
-                          }`}
+                            }`}
                         >
                           {step.title}
                         </div>
                         <div
-                          className={`text-xs mt-1 transition-colors duration-200 ${
-                            isActive
-                              ? "text-muted-foreground"
-                              : "text-muted-foreground/70"
-                          }`}
+                          className={`text-xs mt-1 transition-colors duration-200 ${isActive
+                            ? "text-muted-foreground"
+                            : "text-muted-foreground/70"
+                            }`}
                         >
                           {step.description}
                         </div>
@@ -1808,29 +1784,47 @@ export default function MultiStepForm() {
                       disabled={currentStep === 1}
                       className="flex items-center gap-2"
                     >
-                     {locale === "ar" ? (
-                       <ArrowRight className="h-4 w-4" />
-                     ) : (
-                       <ArrowLeft className="h-4 w-4" />
-                     )}
+                      {locale === "ar" ? (
+                        <ArrowRight className="h-4 w-4" />
+                      ) : (
+                        <ArrowLeft className="h-4 w-4" />
+                      )}
                       {t("common.back")}
                     </Button>
 
                     {currentStep < steps.length ? (
-                      <Button
-                        type="button"
-                        onClick={nextStep}
-                        className="flex items-center gap-2"
-                      >
-                        {t("common.continue")}
-                        {locale === 'ar' ? (
-                          <ArrowLeft className="h-4 w-4" />
-                        ) : (
-                          <ArrowRight className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={clearAllSavedData}
+                        >
+                          <RefreshCcw className="h-4 w-4" />
+                          {t("common.clearData")}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={nextStep}
+                          className="flex items-center gap-2"
+                        >
+                          {t("common.continue")}
+                          {locale === 'ar' ? (
+                            <ArrowLeft className="h-4 w-4" />
+                          ) : (
+                            <ArrowRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     ) : (
                       <div className="flex gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={clearAllSavedData}
+                        >
+                          <RefreshCcw className="h-4 w-4" />
+                          {t("common.clearData")}
+                        </Button>
                         <Button
                           type="submit"
                           onClick={(e) => {
@@ -1838,20 +1832,10 @@ export default function MultiStepForm() {
                             console.log("Current form errors:", errors);
                             handleSubmit(onSubmit)(e);
                           }}
-                          disabled={isGeneratingPDF}
                           className="flex items-center gap-2 min-w-[140px]"
                         >
-                          {isGeneratingPDF ? (
-                            <>
-                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              {t("common.generating")}
-                            </>
-                          ) : (
-                            <>
-                              <Download className="h-4 w-4" />
-                              {t("common.downloadPdf")}
-                            </>
-                          )}
+                          <Eye className="h-4 w-4" />
+                          {t("common.downloadPdf")}
                         </Button>
                       </div>
                     )}
@@ -1862,6 +1846,14 @@ export default function MultiStepForm() {
           </div>
         </div>
       </div>
+
+      {/* PDF Preview Modal */}
+      {showPDFPreview && pdfData && (
+        <PDFGenerator
+          data={pdfData}
+          onClose={() => setShowPDFPreview(false)}
+        />
+      )}
     </div>
   );
 }

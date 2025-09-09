@@ -22,8 +22,9 @@
     "info": "Info",
     "back": "Back",
     "continue": "Continue",
-    "downloadPdf": "Download PDF",
-    "generating": "Generating..."
+    "downloadPdf": "Preview & Print PDF",
+    "generating": "Generating...",
+    "clearData": "Reset Form"
   },
   "form": {
     "steps": {
