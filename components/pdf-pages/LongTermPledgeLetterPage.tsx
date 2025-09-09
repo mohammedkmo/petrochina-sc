@@ -75,7 +75,7 @@ export default function LongTermPledgeLetterPage({ data }: LongTermPledgeLetterP
                         ) والمتعاقدة مع (
                         <span className="mx-2 font-bold">{data.contractedWithArabic || ''}</span>
                         ) بموجب العقد (
-                        <span className="mx-2 font-bold">{data.contractNumber || ''}</span>
+                        <span className="mx-2 font-bold" dir='ltr'>{data.contractNumber || ''}</span>
                         ) نتعهد بتقديم طلب للحصول على تصريح امني دائمي لموظفينا والمذكورة اسمائهم في القائمة المرفقة خلال مدة اقصاها عشرة ايام وبخلافه تتحمل شركتنا جميع التبعات القانونية والاداريه.
                     </div>
                 </div>

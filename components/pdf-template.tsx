@@ -158,7 +158,11 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
             {data.clearanceType !== 'Permanent' && (
                 <>
                     <LongTermPledgeLetterPage data={processedData} />
-                    <VisaPledgeLetterPage data={processedData} />
+                    {
+                        data.numberOfInternationals && Number(data.numberOfInternationals) > 0 && (
+                            <VisaPledgeLetterPage data={processedData} />
+                        )
+                    }
                 </>
             )}
             {processedData.internationalStaff.length > 0 && (

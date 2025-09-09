@@ -93,7 +93,7 @@ export default function SecurityClearanceRequestPage({ data }: Page2Props) {
 
             {/* Arabic Content */}
             <div className="mb-4 text-xs leading-relaxed arabic" dir="rtl">
-                نحن الموقعون ادناه شركه (<span className="mx-1 font-bold">{data.companyNameArabic || ''}</span>) والمتعاقدة مع (<span className="mx-1 font-bold">{data.contractedWithArabic || ''}</span>) بموجب العقد (<span className="mx-1 font-bold">{data.contractNumber || ''}</span>) يرجى التفضل بالموافقة على اصدار طلب تصريح امني لكادر شركتنا للغرض الدخول الى حقل الحفاية النفطي .. مع التقدير
+                نحن الموقعون ادناه شركه (<span className="mx-1 font-bold">{data.companyNameArabic || ''}</span>) والمتعاقدة مع (<span className="mx-1 font-bold">{data.contractedWithArabic || ''}</span>) بموجب العقد (<span className="mx-1 font-bold" dir='ltr'>{data.contractNumber || ''}</span>) يرجى التفضل بالموافقة على اصدار طلب تصريح امني لكادر شركتنا للغرض الدخول الى حقل الحفاية النفطي .. مع التقدير
             </div>
 
             {/* Arabic Numbers Section */}

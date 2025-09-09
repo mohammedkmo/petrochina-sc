@@ -11,8 +11,8 @@ const rubik = Rubik({
 });
 
 export const metadata: Metadata = {
-  title: "Peto - Security Clearance",
-  description: "Generate SC request files",
+  title: "PetroChina - Security Clearance Application",
+  description: "Generate SC Application in a digital format",
 };
 
 type Props = {

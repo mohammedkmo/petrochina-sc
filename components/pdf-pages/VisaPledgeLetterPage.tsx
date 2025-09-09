@@ -78,7 +78,7 @@ export default function VisaPledgeLetterPage({ data }: VisaPledgeLetterPageProps
                         ) المتعاقدون مع شركة (
                         <span className="mx-2 font-bold">{data.contractedWithArabic || ''}</span>
                         ) بموجب العقد رقم (
-                        <span className="mx-2 font-bold">{data.contractNumber || ''}</span>
+                        <span className="mx-2 font-bold" dir='ltr'>{data.contractNumber || ''}</span>
                         ) نتعهد بتقديم الفيزا المطلوبة للاجانب البالغ عددهم (
                         <span className="mx-2 font-bold">{data.numberOfInternationals || ''}</span>
                         ) وبمدة اقصاها ثلاثة ايام من تاريخ وصولهم .

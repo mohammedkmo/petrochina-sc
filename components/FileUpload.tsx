@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, FileSpreadsheet, X, CheckCircle, AlertTriangle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ interface FileUploadProps {
   onDataImport: (data: Record<string, string | number>[], fileName: string, tableType: string) => void;
   tableType: "weapons" | "vehicles" | "international_staff" | "local_staff";
   accept?: string;
+  importedData?: Record<string, string | number>[];
+  importedFileName?: string;
 }
 
 interface ParsedData {
@@ -25,13 +27,28 @@ interface ParsedData {
 const FileUpload: React.FC<FileUploadProps> = ({
   onDataImport,
   tableType,
-  accept = ".xlsx,.xls,.csv"
+  accept = ".xlsx,.xls,.csv",
+  importedData,
+  importedFileName
 }) => {
   const t = useTranslations();
   const [uploadedFile, setUploadedFile] = useState<ParsedData | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationResults, setValidationResults] = useState<{errors: string[], warnings: string[]} | null>(null);
+
+  // Initialize uploadedFile state when importedData is provided
+  useEffect(() => {
+    if (importedData && importedData.length > 0 && importedFileName) {
+      setUploadedFile({
+        data: importedData,
+        fileName: importedFileName,
+        rowCount: importedData.length,
+        errors: [],
+        warnings: []
+      });
+    }
+  }, [importedData, importedFileName]);
 
   const downloadTemplate = () => {
     // Define the actual column structure from updated sample files

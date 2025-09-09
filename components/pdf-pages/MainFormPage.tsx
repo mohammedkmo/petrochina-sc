@@ -164,29 +164,29 @@ export default function MainFormPage({ data }: Page1Props) {
 
                 {/* Contract Period */}
                 <div className="flex gap-4  border-b border-black">
-                    <div className="flex-1 border-r border-black p-2">
+                    <div className="flex-1 border-r border-black p-2 space-y-2">
                         <div className="text-xs">
                             <span className="font-bold">Contract period:</span>
                         </div>
                         <div className="text-xs flex items-center gap-2">  
-                            <span className="font-bold">Starting:</span>
+                            <span className="">Starting:</span>
                             <div className="flex-1">{data.startingDate || ''}</div>
                         </div>
                         <div className="text-xs flex items-center gap-2">
-                            <span className="font-bold">End:</span>
+                            <span className="">End:</span>
                             <div className="flex-1">{data.endDate || ''}</div>
                         </div>
                     </div>
-                    <div dir="rtl" className="flex-1 p-2 arabic">
+                    <div dir="rtl" className="flex-1 p-2 arabic space-y-2">
                         <div className="text-xs">
                             <span className="font-bold">فترة العقد:</span>
                         </div>
                         <div className="text-xs flex items-center gap-2">
-                            <span className="font-bold">بداية العقد:</span>
+                            <span className="">بداية العقد:</span>
                             <div className="flex-1">{data.startingDate || ''}</div>
                         </div>
                         <div className="text-xs flex items-center gap-2">
-                            <span className="font-bold">نهاية العقد:</span>
+                            <span className="">نهاية العقد:</span>
                             <div className="flex-1">{data.endDate || ''}</div>
                         </div>
                     </div>
@@ -246,11 +246,11 @@ export default function MainFormPage({ data }: Page1Props) {
                     <div className="border-b border-black flex gap-4">
                         <div className="border-r border-black p-2 flex-1">
                             <div className="text-xs text-red-600 font-bold">Purpose of entry/</div>
-                            <div className="text-xs min-h-12">{data.purposeOfEntry || ''}</div>
+                            <div className="text-xs min-h-12 mt-2">{data.purposeOfEntry || ''}</div>
                         </div>
                         <div dir="rtl" className="p-2 flex-1 arabic">
                             <div className="text-xs text-red-600 font-bold">الغرض من الدخول\</div>
-                            <div className="text-xs min-h-12">{data.purposeOfEntryArabic || ''}</div>
+                            <div className="text-xs min-h-12 mt-2">{data.purposeOfEntryArabic || ''}</div>
                         </div>
                     </div>
                 )}
@@ -361,19 +361,19 @@ export default function MainFormPage({ data }: Page1Props) {
                             <div className="text-xs font-bold">We prove the contract information and the numbers:</div>
                             <div className='space-y-2 mt-4'>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">Name:</span>
+                                    <span className="">Name:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">Position:</span>
+                                    <span className="">Position:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">Department and Company:</span>
+                                    <span className="">Department and Company:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">Signature:</span>
+                                    <span className="">Signature:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                             </div>
@@ -382,19 +382,19 @@ export default function MainFormPage({ data }: Page1Props) {
                             <div className="text-xs font-bold" dir="rtl">نؤيد معلومات العقد اعلاء والاعداد الواردة:</div>
                             <div className='space-y-2 mt-4'>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">الاسم:</span>
+                                    <span className="">الاسم:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">المنصب:</span>
+                                    <span className="">المنصب:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">القسم او الشركة:</span>
+                                    <span className="">القسم او الشركة:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                                 <div className="flex items-center text-xs gap-2">
-                                    <span className="font-bold">التوقيع:</span>
+                                    <span className="">التوقيع:</span>
                                     <div className="flex-1 h-4"></div>
                                 </div>
                             </div>
@@ -407,7 +407,7 @@ export default function MainFormPage({ data }: Page1Props) {
                 <div className=" p-2">
                     <div className="text-xs" dir="rtl">
                         <div className="mb-1 font-bold">تملأ من قبل قسم الأمن في شركة بتروجاينا.</div>
-                        <div className='space-y-2 mt-2'>
+                        <div className='space-y-4 mt-4'>
                             <div className="flex items-center">
                                 <span className="">دققت من قبل:</span>
                                 <div className="flex-1 h-4"></div>

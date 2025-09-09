@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import NumberInput from "./ui/number-input";
 import { Card, CardContent } from "./ui/card";
 import PDFGenerator from "./PDFGenerator";
 import { Badge } from "./ui/badge";
@@ -21,7 +22,7 @@ import {
   CheckSquare,
   Upload,
   Eye,
-  RefreshCcw,
+  Trash2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Logo from "./logo";
@@ -201,17 +202,35 @@ export default function MultiStepForm() {
     local_staff: []
   });
 
+  const [tableFileNames, setTableFileNames] = useState<{
+    weapons: string;
+    vehicles: string;
+    international_staff: string;
+    local_staff: string;
+  }>({
+    weapons: "",
+    vehicles: "",
+    international_staff: "",
+    local_staff: ""
+  });
+
   // Handler for file import
-  const handleFileImport = (data: TableData[], tableType: string) => {
+  const handleFileImport = (data: TableData[], fileName: string, tableType: string) => {
     const newTableData = {
       ...tableData,
       [tableType]: data
     };
+    const newTableFileNames = {
+      ...tableFileNames,
+      [tableType]: fileName
+    };
 
     setTableData(newTableData);
+    setTableFileNames(newTableFileNames);
 
     // Save to localStorage to persist across page navigation
     localStorage.setItem('tableData', JSON.stringify(newTableData));
+    localStorage.setItem('tableFileNames', JSON.stringify(newTableFileNames));
   };
 
   const {
@@ -221,6 +240,7 @@ export default function MultiStepForm() {
     formState: { errors },
     trigger,
     setValue,
+    reset,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -274,9 +294,12 @@ export default function MultiStepForm() {
           "numberOfInternationals",
           "numberOfVehicles",
           "numberOfWeapons",
-          "purposeOfEntry",
-          "purposeOfEntryArabic",
         ];
+        
+        // Add purpose of entry fields only if clearance type is not Permanent
+        if (watchedFields.clearanceType !== "Permanent") {
+          fieldsToValidate.push("purposeOfEntry", "purposeOfEntryArabic");
+        }
         break;
       case 5:
         fieldsToValidate = ["managerName", "position"];
@@ -324,6 +347,18 @@ export default function MultiStepForm() {
         console.log('Loaded table data from localStorage:', parsedData);
       } catch (error) {
         console.error('Error parsing saved table data:', error);
+      }
+    }
+
+    // Load table file names
+    const savedTableFileNames = localStorage.getItem('tableFileNames');
+    if (savedTableFileNames) {
+      try {
+        const parsedFileNames = JSON.parse(savedTableFileNames);
+        setTableFileNames(parsedFileNames);
+        console.log('Loaded table file names from localStorage:', parsedFileNames);
+      } catch (error) {
+        console.error('Error parsing saved table file names:', error);
       }
     }
 
@@ -478,18 +513,45 @@ export default function MultiStepForm() {
 
   // Function to clear all saved data
   const clearAllSavedData = () => {
+    // Clear localStorage
     localStorage.removeItem('formData');
     localStorage.removeItem('tableData');
+    localStorage.removeItem('tableFileNames');
     localStorage.removeItem('headerImageUrl');
+    
+    // Reset form to default values
+    reset({
+      clearanceType: "Temporary",
+      duration: "0",
+      entryApprovalType: "New",
+      numberOfIraqis: "0",
+      numberOfInternationals: "0",
+      numberOfVehicles: "0",
+      numberOfWeapons: "0",
+      authorizedPersonName: "",
+      authorizedPersonNameArabic: "",
+      authorizedPersonId: "",
+      authorizationStartDate: "",
+      authorizationEndDate: "",
+    });
+    
+    // Reset state variables
     setTableData({
       weapons: [],
       vehicles: [],
       international_staff: [],
       local_staff: []
     });
+    setTableFileNames({
+      weapons: "",
+      vehicles: "",
+      international_staff: "",
+      local_staff: ""
+    });
     setHeaderImageUrl("");
-    setValue("headerImageUrl", "");
-    console.log('All saved data cleared');
+    setCurrentStep(1);
+    
+    console.log('All saved data cleared and form reset');
   };
 
   const onSubmit = () => {
@@ -1180,7 +1242,7 @@ export default function MultiStepForm() {
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-4 gap-6">
                     <div>
                       <Label
                         htmlFor="numberOfIraqis"
@@ -1188,12 +1250,14 @@ export default function MultiStepForm() {
                       >
                         {t("form.staffLabels.numberOfIraqis")}
                       </Label>
-                      <Input
+                      <NumberInput
                         id="numberOfIraqis"
-                        type="number"
-                        {...register("numberOfIraqis")}
+                        value={watchedFields.numberOfIraqis || "0"}
+                        onChange={(value) => setValue("numberOfIraqis", value)}
                         placeholder={t("form.placeholders.numberOfIraqis")}
                         className="mt-1"
+                        min={0}
+                        max={999}
                       />
                       {errors.numberOfIraqis && (
                         <p className="text-destructive text-sm mt-1">
@@ -1209,12 +1273,14 @@ export default function MultiStepForm() {
                       >
                         {t("form.staffLabels.numberOfInternationals")}
                       </Label>
-                      <Input
+                      <NumberInput
                         id="numberOfInternationals"
-                        type="number"
-                        {...register("numberOfInternationals")}
+                        value={watchedFields.numberOfInternationals || "0"}
+                        onChange={(value) => setValue("numberOfInternationals", value)}
                         placeholder={t("form.placeholders.numberOfInternationals")}
                         className="mt-1"
+                        min={0}
+                        max={999}
                       />
                       {errors.numberOfInternationals && (
                         <p className="text-destructive text-sm mt-1">
@@ -1230,12 +1296,14 @@ export default function MultiStepForm() {
                       >
                         {t("form.staffLabels.numberOfVehicles")}
                       </Label>
-                      <Input
+                      <NumberInput
                         id="numberOfVehicles"
-                        type="number"
-                        {...register("numberOfVehicles")}
+                        value={watchedFields.numberOfVehicles || "0"}
+                        onChange={(value) => setValue("numberOfVehicles", value)}
                         placeholder={t("form.placeholders.numberOfVehicles")}
                         className="mt-1"
+                        min={0}
+                        max={999}
                       />
                       {errors.numberOfVehicles && (
                         <p className="text-destructive text-sm mt-1">
@@ -1251,12 +1319,14 @@ export default function MultiStepForm() {
                       >
                         {t("form.staffLabels.numberOfWeapons")}
                       </Label>
-                      <Input
+                      <NumberInput
                         id="numberOfWeapons"
-                        type="number"
-                        {...register("numberOfWeapons")}
+                        value={watchedFields.numberOfWeapons || "0"}
+                        onChange={(value) => setValue("numberOfWeapons", value)}
                         placeholder={t("form.placeholders.numberOfWeapons")}
                         className="mt-1"
+                        min={0}
+                        max={999}
                       />
                       {errors.numberOfWeapons && (
                         <p className="text-destructive text-sm mt-1">
@@ -1319,7 +1389,7 @@ export default function MultiStepForm() {
 
             {/* File Upload Section */}
             <Card>
-              <CardContent className="pt-6">
+              <CardContent >
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-lg font-medium mb-4">{t("form.file_upload.title")}</h3>
@@ -1332,8 +1402,10 @@ export default function MultiStepForm() {
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.weapons_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.weapons.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data) => handleFileImport(data, 'weapons')}
+                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'weapons')}
                           tableType="weapons"
+                          importedData={tableData.weapons}
+                          importedFileName={tableFileNames.weapons}
                         />
                       </div>
                     )}
@@ -1343,8 +1415,10 @@ export default function MultiStepForm() {
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.vehicles_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.vehicles.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data) => handleFileImport(data, 'vehicles')}
+                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'vehicles')}
                           tableType="vehicles"
+                          importedData={tableData.vehicles}
+                          importedFileName={tableFileNames.vehicles}
                         />
                       </div>
                     )}
@@ -1354,8 +1428,10 @@ export default function MultiStepForm() {
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.international_staff_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.international_staff.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data) => handleFileImport(data, 'international_staff')}
+                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'international_staff')}
                           tableType="international_staff"
+                          importedData={tableData.international_staff}
+                          importedFileName={tableFileNames.international_staff}
                         />
                       </div>
                     )}
@@ -1365,8 +1441,10 @@ export default function MultiStepForm() {
                         <h4 className="text-sm font-medium mb-3">{t("form.file_upload.local_staff_data")}</h4>
                         <p className="text-xs text-muted-foreground mb-2">{t("form.tables.local_staff.import_help")}</p>
                         <FileUpload
-                          onDataImport={(data) => handleFileImport(data, 'local_staff')}
+                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'local_staff')}
                           tableType="local_staff"
+                          importedData={tableData.local_staff}
+                          importedFileName={tableFileNames.local_staff}
                         />
                       </div>
                     )}
@@ -1664,7 +1742,19 @@ export default function MultiStepForm() {
               <h1 className="font-bold">{t("common.companyName")} - {t("common.department")} / {t("common.title")}</h1>
             </button>
 
-            <LanguageSwitcher />
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                className="rounded-lg bg-red-100 py-5 px-6 text-red-600 hover:bg-red-200 flex items-center gap-1"
+                
+                onClick={clearAllSavedData}
+              >
+                <Trash2 className="h-4 w-4" />
+                {t("common.clearData")}
+              </Button>
+              <LanguageSwitcher />
+            </div>
           </div>
 
           {/* Main Content */}
@@ -1793,51 +1883,31 @@ export default function MultiStepForm() {
                     </Button>
 
                     {currentStep < steps.length ? (
-                      <div className="flex gap-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={clearAllSavedData}
-                        >
-                          <RefreshCcw className="h-4 w-4" />
-                          {t("common.clearData")}
-                        </Button>
-                        <Button
-                          type="button"
-                          onClick={nextStep}
-                          className="flex items-center gap-2"
-                        >
-                          {t("common.continue")}
-                          {locale === 'ar' ? (
-                            <ArrowLeft className="h-4 w-4" />
-                          ) : (
-                            <ArrowRight className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
+                      <Button
+                        type="button"
+                        onClick={nextStep}
+                        className="flex items-center gap-2"
+                      >
+                        {t("common.continue")}
+                        {locale === 'ar' ? (
+                          <ArrowLeft className="h-4 w-4" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4" />
+                        )}
+                      </Button>
                     ) : (
-                      <div className="flex gap-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={clearAllSavedData}
-                        >
-                          <RefreshCcw className="h-4 w-4" />
-                          {t("common.clearData")}
-                        </Button>
-                        <Button
-                          type="submit"
-                          onClick={(e) => {
-                            console.log("Download PDF button clicked!");
-                            console.log("Current form errors:", errors);
-                            handleSubmit(onSubmit)(e);
-                          }}
-                          className="flex items-center gap-2 min-w-[140px]"
-                        >
-                          <Eye className="h-4 w-4" />
-                          {t("common.downloadPdf")}
-                        </Button>
-                      </div>
+                      <Button
+                        type="submit"
+                        onClick={(e) => {
+                          console.log("Download PDF button clicked!");
+                          console.log("Current form errors:", errors);
+                          handleSubmit(onSubmit)(e);
+                        }}
+                        className="flex items-center gap-2 min-w-[140px]"
+                      >
+                        <Eye className="h-4 w-4" />
+                        {t("common.downloadPdf")}
+                      </Button>
                     )}
                   </div>
                 </div>

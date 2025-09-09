@@ -90,7 +90,7 @@ export default function PledgeLetterPage({ data }: Page4Props) {
 
             {/* Arabic Content */}
             <div className="mb-4 text-xs leading-relaxed arabic" dir="rtl">
-                نحن الموقعون ادناه شركه (<span className="mx-1 font-bold">{data.companyNameArabic || ''}</span>) والمتعاقدة مع (<span className="mx-1 font-bold">{data.contractedWithArabic || ''}</span>) بموجب العقد (<span className="mx-1 font-bold">{data.contractNumber || ''}</span>) نتعهد بصحه المعلومات والاعداد والتفاصيل المقدمة لغرض الحصول تصريح امني (<span className="mx-1 font-bold">{clearanceTypeArabic(data.clearanceType || '')}</span>) وان جميعها صحيحه ومطابقه لاحتياجات عقد العمل في حقل الحلفايا النفطي ولاجله وقعنا .
+                نحن الموقعون ادناه شركه (<span className="mx-1 font-bold">{data.companyNameArabic || ''}</span>) والمتعاقدة مع (<span className="mx-1 font-bold">{data.contractedWithArabic || ''}</span>) بموجب العقد (<span className="mx-1 font-bold" dir='ltr'>{data.contractNumber || ''}</span>) نتعهد بصحه المعلومات والاعداد والتفاصيل المقدمة لغرض الحصول تصريح امني (<span className="mx-1 font-bold">{clearanceTypeArabic(data.clearanceType || '')}</span>) وان جميعها صحيحه ومطابقه لاحتياجات عقد العمل في حقل الحلفايا النفطي ولاجله وقعنا .
             </div>
 
             {/* Arabic Numbers Section */}
