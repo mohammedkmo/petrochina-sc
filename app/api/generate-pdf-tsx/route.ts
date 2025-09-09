@@ -78,21 +78,12 @@ export async function POST(req: NextRequest) {
     const isProduction =
       process.env.NODE_ENV === "production" || process.env.VERCEL;
 
-    const browser = await puppeteer.launch(
-      isProduction
-        ? {
-            args: chromium.args,
-            defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath(),
-            headless: chromium.headless,
-          }
-        : {
-            headless: true,
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
-            executablePath:
-              "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-          }
-    );
+      const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
 
     const page = await browser.newPage();
 
