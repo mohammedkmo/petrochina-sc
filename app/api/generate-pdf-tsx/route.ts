@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
         '--disable-gpu'
       ],
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath('/tmp'),
+      executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     } : {
       headless: true,
