@@ -3,6 +3,10 @@ import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 import React from 'react';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -75,37 +79,16 @@ export async function POST(req: NextRequest) {
 
     // Launch Puppeteer with environment-specific configuration
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+
+    // Ensure Sparticuz runs in the most compatible mode on serverless
+    chromium.setHeadlessMode = true;
+    chromium.setGraphicsMode = false;
     
     const browser = await puppeteer.launch(isProduction ? {
-      args: [
-        ...chromium.args,
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-ipc-flooding-protection',
-        '--font-render-hinting=none',
-        '--disable-plugins',
-        '--disable-default-apps',
-        '--disable-sync',
-        '--disable-translate',
-        '--hide-scrollbars',
-        '--mute-audio',
-        '--no-default-browser-check',
-        '--no-pings'
-      ],
+      args: chromium.args,
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      headless: true,
       protocolTimeout: 30000
     } : {
       headless: true,
