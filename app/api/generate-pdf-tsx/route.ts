@@ -116,30 +116,46 @@ export async function POST(req: NextRequest) {
     
     const page = await browser.newPage();
     
-    // Set content and wait for fonts to load
-    await page.setContent(htmlTemplate, { waitUntil: 'networkidle0' });
+    // Set longer timeout for page operations
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
     
-    // Generate PDF
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '0mm',
-        right: '0mm',
-        bottom: '0mm',
-        left: '0mm'
-      }
-    });
-    
-    await browser.close();
-    
-    return new NextResponse(Buffer.from(pdf), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=security-clearance.pdf",
-      },
-    });
+    try {
+      // Set content and wait for fonts to load
+      await page.setContent(htmlTemplate, { 
+        waitUntil: 'networkidle0',
+        timeout: 30000
+      });
+      
+      // Wait a bit more for any remaining resources
+       await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Generate PDF
+      const pdf = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '0mm',
+          right: '0mm',
+          bottom: '0mm',
+          left: '0mm'
+        },
+        timeout: 30000
+      });
+      
+      await browser.close();
+      
+      return new NextResponse(Buffer.from(pdf), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": "attachment; filename=security-clearance.pdf",
+        },
+      });
+    } catch (error) {
+       await browser.close();
+       throw error;
+     }
     
   } catch (error) {
     console.error("Error generating PDF:", error);
