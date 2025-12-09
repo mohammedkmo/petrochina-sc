@@ -2,25 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import QRCode from 'react-qr-code';
-import { 
-  compressData,
-  getCompressionInfo,
-  validateCompressedData
-} from '../../lib/simple-compression';
 
 interface FormData {
-  companyNameEnglish?: string;
-  companyNameArabic?: string;
-  authorizedPersonName?: string;
-  contactInfo?: string;
+  contractNumber?: string;
   localStaffCount?: number;
   internationalStaffCount?: number;
   vehiclesCount?: number;
   weaponsCount?: number;
+  clearanceType?: string;
   entryApprovalType?: string;
-  contractedWithEnglish?: string;
-  contractedWithArabic?: string;
-  contractNumber?: string;
 }
 
 interface QRCodePageProps {
@@ -28,126 +18,93 @@ interface QRCodePageProps {
 }
 
 interface CleanData extends Record<string, unknown> {
-  companyNameEnglish: string;
-  companyNameArabic: string;
-  authorizedPersonName: string;
-  contactInfo: string;
+  contractNumber: string;
   localStaffCount: number;
   internationalStaffCount: number;
   vehiclesCount: number;
   weaponsCount: number;
+  clearanceType: string;
   entryApprovalType: string;
-  contractedWithEnglish: string;
-  contractedWithArabic: string;
-  contractNumber: string;
 }
 
 const QRCodePage: React.FC<QRCodePageProps> = ({ data }) => {
-  const [compressedData, setCompressedData] = useState<string>('');
-  const [compressionInfo, setCompressionInfo] = useState<{
-    originalSize: number;
-    compressedSize: number;
-    compressionRatio: number;
-    spaceSaved: number;
-  } | null>(null);
-  const [isValid, setIsValid] = useState<boolean>(false);
+  const [qrData, setQrData] = useState<string>('');
 
-  // Compress and encrypt data when component mounts or data changes
+  // Generate plain JSON when component mounts or data changes
   useEffect(() => {
-    // Create a minimal JSON object with only essential fields to avoid QR code size limits
+    // Create a minimal JSON object with only essential fields
     const cleanData: CleanData = {
-      // Company Information
-      companyNameEnglish: data.companyNameEnglish || '',
-      companyNameArabic: data.companyNameArabic || '',
-      
-      // Authorized Representative
-      authorizedPersonName: data.authorizedPersonName || '',
-      contactInfo: data.contactInfo || '',
-      
-      // Counts
+      contractNumber: data.contractNumber || '',
       localStaffCount: data.localStaffCount || 0,
       internationalStaffCount: data.internationalStaffCount || 0,
       vehiclesCount: data.vehiclesCount || 0,
       weaponsCount: data.weaponsCount || 0,
-      
-      // Entry approval type and contract info
-      entryApprovalType: data.entryApprovalType || '',
-      contractedWithEnglish: data.contractedWithEnglish || '',
-      contractedWithArabic: data.contractedWithArabic || '',
-      contractNumber: data.contractNumber || ''
+      clearanceType: data.clearanceType || '',
+      entryApprovalType: data.entryApprovalType || ''
     };
 
     try {
-      // Simple compression
-      const compressed = compressData(cleanData);
-      setCompressedData(compressed);
+      // Convert to plain JSON string
+      const jsonString = JSON.stringify(cleanData);
+      setQrData(jsonString);
       
-      // Get compression information
-      const info = getCompressionInfo(cleanData, compressed);
-      setCompressionInfo(info);
-      
-      // Validate the compressed data
-      const valid = validateCompressedData(compressed);
-      setIsValid(valid);
-      
-      console.log(`Compression: ${info.compressionRatio}% reduction (${info.originalSize} → ${info.compressedSize} chars)`);
+      console.log('QR Code data:', cleanData);
     } catch (error) {
-      console.error('Error compressing data:', error);
-      setCompressedData('');
-      setIsValid(false);
+      console.error('Error creating QR data:', error);
+      setQrData('');
     }
   }, [data]);
 
   return (
-    <div className="w-full h-[100vh] bg-white p-8 flex flex-col items-center justify-center">
+    <div className="w-full h-[100vh] bg-gradient-to-b from-gray-50 to-white p-8 flex flex-col items-center justify-center">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">
+      <div className="text-center mb-8 max-w-2xl">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
           QR Code - Security Clearance Application Data
         </h1>
-        <h2 className="text-xl font-bold text-gray-600 mb-4" dir="rtl">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-700 mb-4" dir="rtl">
           رمز الاستجابة السريعة - بيانات طلب التصريح الأمني
         </h2>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm md:text-base text-gray-600 mb-2">
           Scan the QR code below to access all submitted form data in digital format
         </p>
-        <p className="text-sm text-gray-600" dir="rtl">
+        <p className="text-sm md:text-base text-gray-600" dir="rtl">
           امسح رمز الاستجابة السريعة أدناه للوصول إلى جميع بيانات النموذج المقدم بالتنسيق الرقمي
         </p>
       </div>
 
       {/* QR Code */}
       <div className="flex flex-col items-center">
-        <div className="bg-white p-6 border-2 border-gray-100 rounded-xl mb-6">
-          {compressedData && isValid ? (
+        <div className="bg-white p-6 border-2 border-gray-200 rounded-2xl mb-6">
+          {qrData ? (
             <QRCode
-              value={compressedData}
+              value={qrData}
               size={300}
               level="M"
               bgColor="#FFFFFF"
               fgColor="#000000"
             />
           ) : (
-            <div className="w-[300px] h-[300px] flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300">
+            <div className="w-[300px] h-[300px] flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
               <p className="text-gray-500 text-center">
-                {compressedData ? 'Invalid Data' : 'Loading...'}
+                Loading...
               </p>
             </div>
           )}
         </div>
         
         {/* Instructions */}
-        <div className="text-center max-w-md">
-          <p className="text-xs text-gray-500 mt-2">
-            <strong>Note:</strong> Data uses advanced multi-algorithm compression and encryption for maximum size optimization.
+        <div className="text-center max-w-md space-y-2">
+          <p className="text-xs md:text-sm text-gray-600 mt-2">
+            <strong className="font-semibold">Note:</strong> Scan the QR code to get the data in JSON format.
           </p>
-          <p className="text-xs text-gray-500" dir="rtl">
-            <strong>ملاحظة:</strong> البيانات تستخدم ضغط متقدم متعدد الخوارزميات وتشفير لتحسين الحجم إلى أقصى حد.
+          <p className="text-xs md:text-sm text-gray-600" dir="rtl">
+            <strong className="font-semibold">ملاحظة:</strong> امسح رمز الاستجابة السريعة للحصول على البيانات بتنسيق JSON.
           </p>
         </div>
 
         {/* Metadata */}
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-1">
           <p className="text-xs text-gray-400">
             Generated: {new Date().toLocaleString()}
           </p>

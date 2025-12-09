@@ -1,6 +1,7 @@
 {
   "common": {
-    "companyName":"Petrochina",
+    "companyName": "Petrochina Halfaya FZCO Iraq Branch",
+    "systemName": "Security Clearance Application Generator",
     "department": "Security Department",
     "title": "Security Clearance Application",
     "next": "Next",
@@ -29,32 +30,59 @@
   "form": {
     "steps": {
       "clearance": {
-        "title": "Security Clearance Type",
-        "description": "Select the type of security clearance required"
+        "title": "Clearance Type",
+        "description": "Select clearance type and approval entry type"
       },
-      "company": {
-        "title": "Company Information",
-        "description": "Provide your company details and letterhead"
+      "companyIdentity": {
+        "title": "Company Identity",
+        "description": "Enter company name in English and Arabic"
       },
-      "contract": {
+      "companyContact": {
+        "title": "Contact Info",
+        "description": "Contact details and company letterhead"
+      },
+      "contractPartners": {
+        "title": "Contract Partners",
+        "description": "Enter details of the contracted party"
+      },
+      "contractDetails": {
         "title": "Contract Details",
-        "description": "Enter contract information and project details"
+        "description": "Enter the contract number, subject, and validity dates."
       },
-      "staff": {
-        "title": "Staff Information",
-        "description": "Add staff members requiring clearance"
+      "contractTimeline": {
+        "title": "SC Duration",
+        "description": "Set the duration for this request.",
+        "durationTitle": "Security Clearance Validity",
+        "durationHelp": "Total days of access required for this request."
+      },
+      "staffCounts": {
+        "title": "Staff Counts",
+        "description": "Number of Iraqi and International staff"
+      },
+      "resources": {
+        "title": "Resources",
+        "description": "Specify mission vehicles and weapons"
+      },
+      "purpose": {
+        "title": "Purposes",
+        "description": "State the purpose of your mission",
+        "notRequired": "Purpose of entry is not required for Permanent clearance type."
       },
       "management": {
-        "title": "Management Information",
-        "description": "Provide management details"
+        "title": "Management",
+        "description": "Manager name and position"
       },
-      "authorized": {
-        "title": "Authorized Personnel",
-        "description": "Add authorized personnel information"
+      "authorizedPerson": {
+        "title": "Authorized Person",
+        "description": "Authorized signatory details"
+      },
+      "authorizationValidity": {
+        "title": "Authorization Validity",
+        "description": "Authorization period validity"
       },
       "review": {
-        "title": "Review",
-        "description": "Review all information before submission",
+        "title": "Final Review",
+        "description": "Review and verify all information before issuance",
         "clearanceTypeTitle": "Clearance Type",
         "companyInformation": "Company Information",
         "contractDetails": "Contract Details",
@@ -127,6 +155,16 @@
       "urgent": "Urgent",
       "urgentDescription": "Emergency clearance for immediate needs"
     },
+    "buttons": {
+      "next": "Next",
+      "back": "Back",
+      "review": "Review",
+      "downloadPDF": "Download PDF"
+    },
+    "options": {
+      "fast": "Fast",
+      "normal": "Normal"
+    },
     "fields": {
       "companyNameEnglish": "Company Name (English)",
       "companyNameArabic": "Company Name (Arabic)",
@@ -187,9 +225,14 @@
     "labels": {
       "duration": "Duration (Days)",
       "contractedWithEnglish": "Contracted With (English)",
-      "contractedWithArabic": "المتعاقد مع (عربي)",
+      "contractedWithArabic": "Contracted With (Arabic)",
       "contractSubjectEnglish": "Contract Subject (English)",
-      "contractSubjectArabic": "موضوع العقد (عربي)",
+      "contractSubjectArabic": "Subject (Arabic)",
+      "contractIdentity": "Contract Identity",
+      "contractValidity": "Validity Period",
+      "contractSubject": "Contract Subject",
+      "days": "Days",
+      "fullNameEnglish": "Full Name (English)",
       "companyNameEnglish": "Company Name (English)",
       "companyNameArabic": "Company Name (Arabic)",
       "contactInfo": "Contact Information",
@@ -223,6 +266,7 @@
       "authorizedPersonId": "Enter ID number"
     },
     "staffLabels": {
+      "title": "Staff Titles",
       "numberOfIraqis": "Number of Iraqis",
       "numberOfInternationals": "Number of Internationals",
       "numberOfVehicles": "Number of Vehicles",
@@ -233,10 +277,11 @@
       "position": "Position",
       "authorizedPersonNameEnglish": "Authorized Person Name (English)",
       "authorizedPersonNameArabic": "الاسم (عربي)",
-    "phoneNumber": "Phone Number",
-    "idNumber": "ID Number (Civil ID/Passport)",
-    "authorizationStartDate": "Authorization Start Date",
-    "authorizationEndDate": "Authorization End Date"
+      "phoneNumber": "Phone Number",
+      "idNumber": "ID Number (Civil ID/Passport)",
+      "authorizedPersonId": "Authorized Person ID",
+      "authorizationStartDate": "Authorization Start Date",
+      "authorizationEndDate": "Authorization End Date"
     },
     "companyLetterhead": {
       "title": "Company Letterhead",
@@ -247,6 +292,7 @@
       "uploading": "Uploading...",
       "alt": "Company letterhead",
       "replace": "Replace",
+      "remove": "Remove",
       "delete": "Delete"
     }
   },
@@ -265,7 +311,6 @@
     "projectLocationRequired": "Project location is required",
     "projectLocationArabicRequired": "Project location in Arabic is required",
     "purposeOfEntryRequired": "Purpose of entry is required",
-    "imageDimensionsTooSmall": "Image dimensions too small. Minimum size: 680x96 pixels for letterhead banner",
     "pdfGenerationFailed": "Failed to generate PDF",
     "entryApprovalTypeRequired": "Entry approval type is required",
     "failedToGeneratePdf": "Failed to generate PDF",

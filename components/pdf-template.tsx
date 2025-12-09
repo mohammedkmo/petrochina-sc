@@ -177,7 +177,15 @@ export default function PDFTemplate({ data }: PDFTemplateProps) {
             {processedData.weapons.length > 0 && (
                 <WeaponsTablePage data={processedData} />
             )}
-            <QRCodePage data={processedData} />
+            <QRCodePage data={{
+                contractNumber: data.contractNumber,
+                localStaffCount: data.numberOfIraqis ? parseInt(data.numberOfIraqis) : 0,
+                internationalStaffCount: data.numberOfInternationals ? parseInt(data.numberOfInternationals) : 0,
+                vehiclesCount: data.numberOfVehicles ? parseInt(data.numberOfVehicles) : 0,
+                weaponsCount: data.numberOfWeapons ? parseInt(data.numberOfWeapons) : 0,
+                clearanceType: data.clearanceType,
+                entryApprovalType: data.entryApprovalType
+            }} />
         </div>
     );
 }

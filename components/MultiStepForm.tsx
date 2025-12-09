@@ -1,238 +1,119 @@
+/**
+ * Multi-Step Form Component
+ * 
+ * Main orchestrator component for the security clearance application form.
+ * Manages form state, navigation, and step rendering.
+ * 
+ * @module MultiStepForm
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { ArrowRight, ArrowLeft, RotateCcw } from "lucide-react";
+
+// UI Components
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import NumberInput from "./ui/number-input";
-import { Card, CardContent } from "./ui/card";
-import PDFGenerator from "./PDFGenerator";
-import { Badge } from "./ui/badge";
-import {
-  CheckCircle,
-  ArrowRight,
-  ArrowLeft,
-  Building2,
-  FileText,
-  Users,
-  CheckSquare,
-  Upload,
-  Eye,
-  Trash2,
-} from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 import Logo from "./logo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { useLocale } from "next-intl";
-import { clearanceTypeArabic } from "@/lib/clearance-type";
-import FileUpload from "./FileUpload";
+import PDFGenerator from "./PDFGenerator";
+
+// Form Step Components
+import {
+  ClearanceTypeStep,
+  CompanyIdentityStep,
+  CompanyContactStep,
+  ContractPartnersStep,
+  ContractDetailsStep,
+  DurationStep,
+  StaffCountsStep,
+  ResourcesStep,
+  PurposeStep,
+  ManagementStep,
+  AuthorizedPersonStep,
+  AuthorizationValidityStep,
+  ReviewStep,
+} from "./form-steps";
+
+// Utilities and Configurations
+import { createFormSchema } from "@/lib/form-schema";
+import { getSteps } from "@/lib/form-steps";
+import { getFieldsToValidate, defaultFormValues } from "@/lib/form-validation";
+import {
+  saveFormData,
+  loadFormData,
+  saveTableData,
+  loadTableData,
+  saveTableFileNames,
+  loadTableFileNames,
+  saveHeaderImage,
+  loadHeaderImage,
+  clearAllFormData,
+  type TableDataState,
+  type TableFileNamesState,
+} from "@/lib/form-storage";
 import { TableData } from "@/lib/file-parser";
+import { FormData } from "@/lib/form-types";
+import Link from "next/link";
 
-// Form Schema - will be created inside component to access translations
-const createFormSchema = (t: (key: string) => string) =>
-  z
-    .object({
-      // Step 1: Clearance Type
-      clearanceType: z
-        .enum(["Permanent", "Temporary", "Urgent"])
-        .refine((val) => val !== undefined, {
-          message: t("validation.clearanceTypeRequired"),
-        }),
-
-      // Step 2: Company Information
-      companyNameEnglish: z
-        .string()
-        .min(1, t("validation.companyNameRequired")),
-      companyNameArabic: z
-        .string()
-        .min(1, t("validation.companyNameArabicRequired")),
-      contractedWithEnglish: z
-        .string()
-        .min(1, t("validation.contractedWithRequired")),
-      contractedWithArabic: z
-        .string()
-        .min(1, t("validation.contractedWithArabicRequired")),
-
-      // Step 3: Contract Information
-      contractNumber: z.string().min(1, t("validation.contractNumberRequired")),
-      contractSubjectEnglish: z.string().min(1, t("validation.contractSubjectRequired")),
-      contractSubjectArabic: z.string().min(1, t("validation.contractSubjectArabicRequired")),
-      startingDate: z.string().min(1, t("validation.startingDateRequired")),
-      endDate: z.string().min(1, t("validation.endDateRequired")),
-      duration: z.string().min(1, t("validation.durationRequired")),
-
-      // Entry approval type (optional)
-      entryApprovalType: z.string().optional(),
-
-      // Step 4: Staff Information
-      numberOfIraqis: z.string().min(1, t("validation.numberOfIraqisRequired")),
-      numberOfInternationals: z
-        .string()
-        .min(1, t("validation.numberOfInternationalsRequired")),
-      numberOfVehicles: z.string().min(1, t("validation.numberOfVehiclesRequired")),
-      numberOfWeapons: z.string().min(1, t("validation.numberOfWeaponsRequired")),
-
-      // Manager Information
-      managerName: z.string().min(1, t("validation.managerNameRequired")),
-      position: z.string().min(1, t("validation.positionRequired")),
-
-      // Focal Point
-      fpPhone: z.string().min(1, t("validation.phoneNumberRequired")),
-
-      // Purpose (conditional based on clearance type)
-      purposeOfEntry: z.string().optional(),
-      purposeOfEntryArabic: z.string().optional(),
-
-      // Authorized Person (missing fields in template)
-      authorizedPersonName: z
-        .string()
-        .min(1, t("validation.authorizedPersonNameRequired")),
-      authorizedPersonNameArabic: z.string().min(1, t("validation.authorizedPersonNameArabicRequired")),
-      authorizedPersonId: z.string().min(1, t("validation.authorizedPersonIdRequired")),
-      authorizationStartDate: z.string().min(1, t("validation.startDateRequired")),
-      authorizationEndDate: z.string().min(1, t("validation.endDateRequired")),
-      contactInfo: z.string().min(1, t("validation.contactInfoRequired")),
-
-      // Letter Header
-      headerImageUrl: z.string().min(1, t("validation.headerImageRequired")),
-
-      // Table Data
-      weaponsData: z.array(z.any()).optional(),
-      vehiclesData: z.array(z.any()).optional(),
-      internationalStaffData: z.array(z.any()).optional(),
-      localStaffData: z.array(z.any()).optional(),
-    })
-    .refine(
-      (data) => {
-        // Purpose of entry is required only when clearance type is not Permanent
-        if (data.clearanceType !== "Permanent") {
-          return data.purposeOfEntry && data.purposeOfEntry.trim().length > 0;
-        }
-        return true;
-      },
-      {
-        message: t("validation.purposeOfEntryRequired"),
-        path: ["purposeOfEntry"],
-      }
-    )
-    .refine(
-      (data) => {
-        // Purpose of entry Arabic is required only when clearance type is not Permanent
-        if (data.clearanceType !== "Permanent") {
-          return (
-            data.purposeOfEntryArabic &&
-            data.purposeOfEntryArabic.trim().length > 0
-          );
-        }
-        return true;
-      },
-      {
-        message: t("validation.purposeOfEntryArabicRequired"),
-        path: ["purposeOfEntryArabic"],
-      }
-    );
-
-const getSteps = (t: (key: string) => string) => [
-  {
-    id: 1,
-    title: t("form.steps.clearance.title"),
-    description: t("form.steps.clearance.description"),
-    icon: CheckSquare,
-  },
-  {
-    id: 2,
-    title: t("form.steps.company.title"),
-    description: t("form.steps.company.description"),
-    icon: Building2,
-  },
-  {
-    id: 3,
-    title: t("form.steps.contract.title"),
-    description: t("form.steps.contract.description"),
-    icon: FileText,
-  },
-  {
-    id: 4,
-    title: t("form.steps.staff.title"),
-    description: t("form.steps.staff.description"),
-    icon: Users,
-  },
-  {
-    id: 5,
-    title: t("form.steps.management.title"),
-    description: t("form.steps.management.description"),
-    icon: Users,
-  },
-  {
-    id: 6,
-    title: t("form.steps.authorized.title"),
-    description: t("form.steps.authorized.description"),
-    icon: FileText,
-  },
-  {
-    id: 7,
-    title: t("form.steps.review.title"),
-    description: t("form.steps.review.description"),
-    icon: CheckCircle,
-  },
-];
-
+/**
+ * Main Multi-Step Form Component
+ */
 export default function MultiStepForm() {
+  // Translations and locale
   const t = useTranslations();
+  const locale = useLocale();
+  
+  // Form configuration
   const formSchema = createFormSchema(t);
-  type FormData = z.infer<typeof formSchema>;
   const steps = getSteps(t);
+  
+  // Form state
   const [currentStep, setCurrentStep] = useState(1);
   const [headerImageUrl, setHeaderImageUrl] = useState<string>("");
-
-  // Table data state
-  const [tableData, setTableData] = useState<{
-    weapons: TableData[];
-    vehicles: TableData[];
-    international_staff: TableData[];
-    local_staff: TableData[];
-  }>({
+  const [tableData, setTableData] = useState<TableDataState>({
     weapons: [],
     vehicles: [],
     international_staff: [],
-    local_staff: []
+    local_staff: [],
   });
-
-  const [tableFileNames, setTableFileNames] = useState<{
-    weapons: string;
-    vehicles: string;
-    international_staff: string;
-    local_staff: string;
-  }>({
+  const [tableFileNames, setTableFileNames] = useState<TableFileNamesState>({
     weapons: "",
     vehicles: "",
     international_staff: "",
-    local_staff: ""
+    local_staff: "",
   });
 
-  // Handler for file import
-  const handleFileImport = (data: TableData[], fileName: string, tableType: string) => {
+  /**
+   * Handles file import for table data
+   * Saves data to state and localStorage for persistence
+   */
+  const handleFileImport = (
+    data: TableData[],
+    fileName: string,
+    tableType: keyof TableDataState
+  ) => {
     const newTableData = {
       ...tableData,
-      [tableType]: data
+      [tableType]: data,
     };
     const newTableFileNames = {
       ...tableFileNames,
-      [tableType]: fileName
+      [tableType]: fileName,
     };
 
     setTableData(newTableData);
     setTableFileNames(newTableFileNames);
 
-    // Save to localStorage to persist across page navigation
-    localStorage.setItem('tableData', JSON.stringify(newTableData));
-    localStorage.setItem('tableFileNames', JSON.stringify(newTableFileNames));
+    // Persist to localStorage
+    saveTableData(newTableData);
+    saveTableFileNames(newTableFileNames);
   };
 
+  // React Hook Form setup
   const {
     register,
     handleSubmit,
@@ -243,85 +124,29 @@ export default function MultiStepForm() {
     reset,
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      clearanceType: "Temporary",
-      duration: "0",
-      entryApprovalType: "New",
-      numberOfIraqis: "0",
-      numberOfInternationals: "0",
-      numberOfVehicles: "0",
-      numberOfWeapons: "0",
-      authorizedPersonName: "",
-      authorizedPersonNameArabic: "",
-      authorizedPersonId: "",
-      authorizationStartDate: "",
-      authorizationEndDate: "",
-    },
+    defaultValues: defaultFormValues,
   });
 
   const watchedFields = watch();
 
+  /**
+   * Validates current step and moves to next step if valid
+   */
   const nextStep = async () => {
-    let fieldsToValidate: (keyof FormData)[] = [];
+    const fieldsToValidate = getFieldsToValidate(
+      currentStep,
+      watchedFields.clearanceType
+    );
 
-    switch (currentStep) {
-      case 1:
-        fieldsToValidate = ["clearanceType", "entryApprovalType"];
-        break;
-      case 2:
-        fieldsToValidate = [
-          "companyNameEnglish",
-          "companyNameArabic",
-          "contactInfo",
-          "headerImageUrl",
-        ];
-        break;
-      case 3:
-        fieldsToValidate = [
-          "contractNumber",
-          "contractSubjectEnglish",
-          "contractSubjectArabic",
-          "contractedWithEnglish",
-          "contractedWithArabic",
-          "startingDate",
-          "endDate",
-          "duration",
-        ];
-        break;
-      case 4:
-        fieldsToValidate = [
-          "numberOfIraqis",
-          "numberOfInternationals",
-          "numberOfVehicles",
-          "numberOfWeapons",
-        ];
-        
-        // Add purpose of entry fields only if clearance type is not Permanent
-        if (watchedFields.clearanceType !== "Permanent") {
-          fieldsToValidate.push("purposeOfEntry", "purposeOfEntryArabic");
-        }
-        break;
-      case 5:
-        fieldsToValidate = ["managerName", "position"];
-        break;
-      case 6:
-        fieldsToValidate = [
-          "authorizedPersonName",
-          "authorizedPersonNameArabic",
-          "fpPhone",
-          "authorizedPersonId",
-          "authorizationStartDate",
-          "authorizationEndDate",
-        ];
-        break;
-    }
-
-    const isValid = await trigger(fieldsToValidate);
+    const isValid = await trigger(fieldsToValidate as (keyof FormData)[]);
     if (isValid && currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
   };
 
+  /**
+   * Moves to previous step
+   */
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -329,74 +154,64 @@ export default function MultiStepForm() {
   };
 
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [pdfData, setPdfData] = useState<Record<string, unknown> | null>(null);
   const [showPDFPreview, setShowPDFPreview] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const locale = useLocale()
-
-  // Load all form data from localStorage on component mount
+  /**
+   * Load saved data from localStorage on component mount
+   */
   useEffect(() => {
     // Load table data
-    const savedTableData = localStorage.getItem('tableData');
+    const savedTableData = loadTableData();
     if (savedTableData) {
-      try {
-        const parsedData = JSON.parse(savedTableData);
-        setTableData(parsedData);
-        console.log('Loaded table data from localStorage:', parsedData);
-      } catch (error) {
-        console.error('Error parsing saved table data:', error);
-      }
+      setTableData(savedTableData);
     }
 
     // Load table file names
-    const savedTableFileNames = localStorage.getItem('tableFileNames');
+    const savedTableFileNames = loadTableFileNames();
     if (savedTableFileNames) {
-      try {
-        const parsedFileNames = JSON.parse(savedTableFileNames);
-        setTableFileNames(parsedFileNames);
-        console.log('Loaded table file names from localStorage:', parsedFileNames);
-      } catch (error) {
-        console.error('Error parsing saved table file names:', error);
-      }
+      setTableFileNames(savedTableFileNames);
     }
 
     // Load header image
-    const savedHeaderImage = localStorage.getItem('headerImageUrl');
+    const savedHeaderImage = loadHeaderImage();
     if (savedHeaderImage) {
       setHeaderImageUrl(savedHeaderImage);
       setValue("headerImageUrl", savedHeaderImage);
     }
 
     // Load form data
-    const savedFormData = localStorage.getItem('formData');
+    const savedFormData = loadFormData();
     if (savedFormData) {
-      try {
-        const parsedFormData = JSON.parse(savedFormData);
-        // Set all form values
-        Object.keys(parsedFormData).forEach(key => {
-          setValue(key as keyof FormData, parsedFormData[key]);
-        });
-        console.log('Loaded form data from localStorage:', parsedFormData);
-      } catch (error) {
-        console.error('Error parsing saved form data:', error);
-      }
+      Object.keys(savedFormData).forEach((key) => {
+        const formKey = key as keyof FormData;
+        const value = savedFormData[key];
+        if (value !== undefined && value !== null) {
+          setValue(formKey, value as FormData[typeof formKey]);
+        }
+      });
     }
   }, [setValue]);
 
-  // Save form data to localStorage whenever it changes
+  /**
+   * Save form data to localStorage whenever it changes
+   */
   useEffect(() => {
     const subscription = watch((formData) => {
-      localStorage.setItem('formData', JSON.stringify(formData));
+      saveFormData(formData);
     });
     return () => subscription.unsubscribe();
   }, [watch]);
 
-  // Save header image to localStorage when it changes
+  /**
+   * Save header image to localStorage when it changes
+   */
   useEffect(() => {
     if (headerImageUrl) {
-      localStorage.setItem('headerImageUrl', headerImageUrl);
+      saveHeaderImage(headerImageUrl);
     }
   }, [headerImageUrl]);
 
@@ -455,9 +270,7 @@ export default function MultiStepForm() {
           setIsUploading(false);
         };
 
-        reader.onprogress = (e) => {
-          // Progress tracking removed as uploadProgress state was removed
-        };
+        // Image loading progress handled automatically
 
         reader.readAsDataURL(file);
       };
@@ -508,1414 +321,272 @@ export default function MultiStepForm() {
   const removeImage = () => {
     setHeaderImageUrl("");
     setValue("headerImageUrl", ""); // Clear form field
-    localStorage.removeItem('headerImageUrl');
+    setImageError(null); // Clear any image errors
+    saveHeaderImage(""); // Clear from localStorage
   };
 
-  // Function to clear all saved data
+  /**
+   * Clears all saved data and resets the form
+   */
   const clearAllSavedData = () => {
-    // Clear localStorage
-    localStorage.removeItem('formData');
-    localStorage.removeItem('tableData');
-    localStorage.removeItem('tableFileNames');
-    localStorage.removeItem('headerImageUrl');
-    
-    // Reset form to default values
-    reset({
-      clearanceType: "Temporary",
-      duration: "0",
-      entryApprovalType: "New",
-      numberOfIraqis: "0",
-      numberOfInternationals: "0",
-      numberOfVehicles: "0",
-      numberOfWeapons: "0",
-      authorizedPersonName: "",
-      authorizedPersonNameArabic: "",
-      authorizedPersonId: "",
-      authorizationStartDate: "",
-      authorizationEndDate: "",
-    });
-    
-    // Reset state variables
+    clearAllFormData();
+    reset(defaultFormValues);
     setTableData({
       weapons: [],
       vehicles: [],
       international_staff: [],
-      local_staff: []
+      local_staff: [],
     });
     setTableFileNames({
       weapons: "",
       vehicles: "",
       international_staff: "",
-      local_staff: ""
+      local_staff: "",
     });
     setHeaderImageUrl("");
+    setImageError(null);
     setCurrentStep(1);
-    
-    console.log('All saved data cleared and form reset');
+    setShowResetConfirm(false);
   };
 
+  /**
+   * Handles reset button click - shows confirmation dialog
+   */
+  const handleResetClick = () => {
+    setShowResetConfirm(true);
+  };
+
+  /**
+   * Handles form submission
+   * Prepares data for PDF generation
+   */
   const onSubmit = () => {
-    // Set the form data for PDF generation
     const formData = {
       ...watchedFields,
       headerImageUrl,
-      // Include table data from Excel imports
       weaponsData: tableData.weapons,
       vehiclesData: tableData.vehicles,
       internationalStaffData: tableData.international_staff,
       localStaffData: tableData.local_staff,
     };
 
-    // Store data in a ref or state that PDFGenerator can access
     setPdfData(formData);
     setShowPDFPreview(true);
   };
 
 
+  /**
+   * Renders the content for the current step
+   * Uses extracted step components where available
+   */
   const renderStepContent = () => {
+    // Common props for step components
+    const stepProps = {
+      register,
+      setValue,
+      watch,
+      errors,
+      t,
+      locale,
+    };
+
     switch (currentStep) {
       case 1:
-        return (
-          <div className="space-y-12 p-6">
-            {/* Clearance Type Section */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  {
-                    value: "Permanent",
-                    label: t("form.clearanceType.permanent"),
-                    description: t("form.clearanceType.permanentDescription"),
-                    icon: (
-                      <svg
-                        className="w-8 h-8 mb-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Temporary",
-                    label: t("form.clearanceType.temporary"),
-                    description: t("form.clearanceType.temporaryDescription"),
-                    icon: (
-                      <svg
-                        className="w-8 h-8 mb-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Urgent",
-                    label: t("form.clearanceType.urgent"),
-                    description: t("form.clearanceType.urgentDescription"),
-                    icon: (
-                      <svg
-                        className="w-8 h-8 mb-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
-                        />
-                      </svg>
-                    ),
-                  },
-                ].map((type) => (
-                  <div
-                    key={type.value}
-                    className={`relative cursor-pointer transition-all duration-200 rounded-lg ${watchedFields.clearanceType === type.value
-                      ? "ring-2 ring-foreground"
-                      : ""
-                      }`}
-                    onClick={() => {
-                      setValue(
-                        "clearanceType",
-                        type.value as "Permanent" | "Temporary" | "Urgent"
-                      );
-                      // Auto-set entry approval type to "New" for Temporary and Urgent
-                      if (
-                        type.value === "Temporary" ||
-                        type.value === "Urgent"
-                      ) {
-                        setValue("entryApprovalType", "New");
-                      }
-                    }}
-                  >
-                    <div
-                      className={`border h-full rounded-lg p-6 text-center transition-all duration-200 ${watchedFields.clearanceType === type.value
-                        ? "border-foreground bg-muted/50"
-                        : "border-border hover:border-muted-foreground"
-                        }`}
-                    >
-                      <div className="flex flex-col items-center">
-                        {type.icon}
-                        <h4 className="font-medium mb-2">{type.label}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {type.description}
-                        </p>
-                      </div>
-                      {watchedFields.clearanceType === type.value && (
-                        <div className="absolute top-3 right-3">
-                          <div className="w-4 h-4 rounded-full bg-foreground"></div>
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      type="radio"
-                      value={type.value}
-                      {...register("clearanceType")}
-                      className="sr-only"
-                    />
-                  </div>
-                ))}
-              </div>
-              {errors.clearanceType && (
-                <p className="text-destructive text-sm text-center">
-                  {errors.clearanceType.message}
-                </p>
-              )}
-            </div>
-
-            {/* Entry Approval Type Section */}
-            <div className="space-y-6">
-              <div className="text-start">
-                <h3 className="text-xl font-semibold text-foreground mb-2">
-                  {t("form.entryApprovalType.title")}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {watchedFields.clearanceType === "Temporary" ||
-                    watchedFields.clearanceType === "Urgent"
-                    ? t("form.entryApprovalType.autoDescription")
-                    : t("form.entryApprovalType.description")}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {[
-                  {
-                    value: "New",
-                    label: t("form.entryApprovalType.new"),
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Re-new",
-                    label: t("form.entryApprovalType.renew"),
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Add",
-                    label: t("form.entryApprovalType.add"),
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Cancel",
-                    label: t("form.entryApprovalType.cancel"),
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    ),
-                  },
-                  {
-                    value: "Other",
-                    label: t("form.entryApprovalType.other"),
-                    icon: (
-                      <svg
-                        className="w-5 h-5 mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                    ),
-                  },
-                ].map((opt) => {
-                  const isDisabled =
-                    (watchedFields.clearanceType === "Temporary" ||
-                      watchedFields.clearanceType === "Urgent") &&
-                    opt.value !== "New";
-
-                  return (
-                    <div
-                      key={opt.value}
-                      className={`relative transition-all duration-200 rounded-lg ${isDisabled
-                        ? "cursor-not-allowed opacity-50"
-                        : "cursor-pointer"
-                        } ${watchedFields.entryApprovalType === opt.value
-                          ? "ring-2 ring-foreground"
-                          : ""
-                        }`}
-                      onClick={() => {
-                        if (!isDisabled) {
-                          setValue("entryApprovalType", opt.value);
-                        }
-                      }}
-                    >
-                      <div
-                        className={`border rounded-lg p-4 text-center transition-all duration-200 ${watchedFields.entryApprovalType === opt.value
-                          ? "border-foreground bg-muted/50"
-                          : isDisabled
-                            ? "border-border bg-muted/20"
-                            : "border-border hover:border-muted-foreground"
-                          }`}
-                      >
-                        <div className="flex flex-col items-center">
-                          {opt.icon}
-                          <span className="text-sm font-medium">
-                            {opt.label}
-                          </span>
-                        </div>
-                        {watchedFields.entryApprovalType === opt.value && (
-                          <div className="absolute top-2 right-2">
-                            <div className="w-3 h-3 rounded-full bg-foreground"></div>
-                          </div>
-                        )}
-                      </div>
-                      <input
-                        type="radio"
-                        value={opt.value}
-                        {...register("entryApprovalType")}
-                        className="sr-only"
-                        disabled={isDisabled}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-              {errors.entryApprovalType && (
-                <p className="text-destructive text-sm text-center">
-                  {errors.entryApprovalType.message}
-                </p>
-              )}
-            </div>
-          </div>
-        );
+        return <ClearanceTypeStep {...stepProps} />;
 
       case 2:
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">
-                    {t("form.companyLetterhead.title")}
-                  </Label>
-
-                  {!headerImageUrl ? (
-                    <div
-                      className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer ${isDragOver
-                        ? "border-blue-400 bg-blue-50 dark:bg-blue-950/20"
-                        : "border-border hover:border-blue-300"
-                        }`}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      onClick={() =>
-                        document.getElementById("headerImage")?.click()
-                      }
-                    >
-                      <Upload
-                        className={`mx-auto h-8 w-8 mb-3 ${isDragOver ? "text-blue-500" : "text-muted-foreground"
-                          }`}
-                      />
-                      <p className="text-sm font-medium text-foreground mb-1">
-                        {isDragOver
-                          ? t("form.companyLetterhead.dropText")
-                          : t("form.companyLetterhead.uploadText")}
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {t("form.companyLetterhead.fileTypes")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("form.companyLetterhead.dimensions")}
-                      </p>
-
-                      <input
-                        type="file"
-                        id="headerImage"
-                        accept="image/*"
-                        onChange={handleFileInputChange}
-                        className="hidden"
-                      />
-                      <input
-                        type="hidden"
-                        {...register("headerImageUrl")}
-                        value={headerImageUrl}
-                      />
-
-                      {isUploading && (
-                        <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 rounded-lg flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-2"></div>
-                            <p className="text-sm text-foreground">
-                              {t("form.companyLetterhead.uploading")}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="relative group rounded-lg overflow-hidden border border-border">
-                      <img
-                        src={headerImageUrl}
-                        alt={t("form.companyLetterhead.alt")}
-                        className="w-full h-32 object-cover"
-                      />
-
-                      {/* Overlay with actions */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center space-x-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            document.getElementById("headerImage")?.click()
-                          }
-                          className="px-3 py-1.5 bg-white text-gray-900 text-sm font-medium rounded-md hover:bg-gray-100 transition-colors"
-                        >
-                          {t("form.companyLetterhead.replace")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={removeImage}
-                          className="px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
-                        >
-                          {t("form.companyLetterhead.delete")}
-                        </button>
-                      </div>
-
-                      <input
-                        type="file"
-                        id="headerImage"
-                        accept="image/*"
-                        onChange={handleFileInputChange}
-                        className="hidden"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {imageError && (
-                  <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">!</span>
-                      </div>
-                      <p className="text-red-700 dark:text-red-300 text-sm font-medium">
-                        {imageError}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {errors.headerImageUrl && (
-                  <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">!</span>
-                      </div>
-                      <p className="text-red-700 dark:text-red-300 text-sm font-medium">
-                        {errors.headerImageUrl.message}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                  <div>
-                    <Label
-                      htmlFor="companyNameEnglish"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.labels.companyNameEnglish")}
-                    </Label>
-                    <Input
-                      id="companyNameEnglish"
-                      {...register("companyNameEnglish")}
-                      placeholder={t("form.placeholders.companyNameEnglish")}
-                      className="mt-1"
-                    />
-                    {errors.companyNameEnglish && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.companyNameEnglish.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="companyNameArabic"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.labels.companyNameArabic")}
-                    </Label>
-                    <Input
-                      id="companyNameArabic"
-                      {...register("companyNameArabic")}
-                      placeholder={t("form.placeholders.companyNameArabic")}
-                      dir="rtl"
-                      className="mt-1"
-                    />
-                    {errors.companyNameArabic && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.companyNameArabic.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="contactInfo"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.labels.contactInfo")}
-                    </Label>
-                    <Input
-                      id="contactInfo"
-                      type="email"
-                      {...register("contactInfo")}
-                      placeholder={t("form.placeholders.contactInfo")}
-                      className="mt-1"
-                    />
-                    {errors.contactInfo && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.contactInfo.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <CompanyIdentityStep {...stepProps} />;
 
       case 3:
         return (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div>
-                    <Label
-                      htmlFor="contractNumber"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.labels.contractNumber")}
-                    </Label>
-                    <Input
-                      id="contractNumber"
-                      {...register("contractNumber")}
-                      placeholder={t("form.placeholders.contractNumber")}
-                      className="mt-1"
-                    />
-                    {errors.contractNumber && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.contractNumber.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="startingDate"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.labels.startingDate")}
-                    </Label>
-                    <Input
-                      id="startingDate"
-                      type="date"
-                      {...register("startingDate")}
-                      className="mt-1"
-                    />
-                    {errors.startingDate && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.startingDate.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="endDate" className="text-sm font-medium">
-                      {t("form.labels.endDate")}
-                    </Label>
-                    <Input
-                      id="endDate"
-                      type="date"
-                      {...register("endDate")}
-                      className="mt-1"
-                    />
-                    {errors.endDate && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.endDate.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="duration" className="text-sm font-medium">
-                      {t("form.labels.duration")}
-                    </Label>
-                    <Input
-                      id="duration"
-                      {...register("duration")}
-                      placeholder={t("form.placeholders.duration")}
-                      className="mt-1"
-                    />
-                    {errors.duration && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.duration.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="contractedWithEnglish"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.labels.contractedWithEnglish")}
-                    </Label>
-                    <Input
-                      id="contractedWithEnglish"
-                      {...register("contractedWithEnglish")}
-                      placeholder={t("form.placeholders.contractedWithEnglish")}
-                      className="mt-1"
-                    />
-                    {errors.contractedWithEnglish && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.contractedWithEnglish.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="contractedWithArabic"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.labels.contractedWithArabic")}
-                    </Label>
-                    <Input
-                      id="contractedWithArabic"
-                      {...register("contractedWithArabic")}
-                      placeholder={t("form.placeholders.contractedWithArabic")}
-                      dir="rtl"
-                      className="mt-1"
-                    />
-                    {errors.contractedWithArabic && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.contractedWithArabic.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2 lg:col-span-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Label
-                          htmlFor="contractSubjectEnglish"
-                          className="text-sm font-medium"
-                        >
-                          {t("form.labels.contractSubjectEnglish")}
-                        </Label>
-                        <Textarea
-                          id="contractSubjectEnglish"
-                          {...register("contractSubjectEnglish")}
-                          placeholder={t("form.placeholders.contractSubjectEnglish")}
-                          className="mt-1 min-h-[100px]"
-                        />
-                        {errors.contractSubjectEnglish && (
-                          <p className="text-destructive text-sm mt-1">
-                            {errors.contractSubjectEnglish.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <Label
-                          htmlFor="contractSubjectArabic"
-                          className="text-sm font-medium"
-                        >
-                          {t("form.labels.contractSubjectArabic")}
-                        </Label>
-                        <Textarea
-                          id="contractSubjectArabic"
-                          {...register("contractSubjectArabic")}
-                          placeholder={t("form.placeholders.contractSubjectArabic")}
-                          dir="rtl"
-                          className="mt-1 min-h-[100px]"
-                        />
-                        {errors.contractSubjectArabic && (
-                          <p className="text-destructive text-sm mt-1">
-                            {errors.contractSubjectArabic.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <CompanyContactStep
+            {...stepProps}
+            headerImageUrl={headerImageUrl}
+            isDragOver={isDragOver}
+            isUploading={isUploading}
+            imageError={imageError}
+            onFileInputChange={handleFileInputChange}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onRemoveImage={removeImage}
+          />
         );
 
       case 4:
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-4 gap-6">
-                    <div>
-                      <Label
-                        htmlFor="numberOfIraqis"
-                        className="text-sm font-medium"
-                      >
-                        {t("form.staffLabels.numberOfIraqis")}
-                      </Label>
-                      <NumberInput
-                        id="numberOfIraqis"
-                        value={watchedFields.numberOfIraqis || "0"}
-                        onChange={(value) => setValue("numberOfIraqis", value)}
-                        placeholder={t("form.placeholders.numberOfIraqis")}
-                        className="mt-1"
-                        min={0}
-                        max={999}
-                      />
-                      {errors.numberOfIraqis && (
-                        <p className="text-destructive text-sm mt-1">
-                          {errors.numberOfIraqis.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="numberOfInternationals"
-                        className="text-sm font-medium"
-                      >
-                        {t("form.staffLabels.numberOfInternationals")}
-                      </Label>
-                      <NumberInput
-                        id="numberOfInternationals"
-                        value={watchedFields.numberOfInternationals || "0"}
-                        onChange={(value) => setValue("numberOfInternationals", value)}
-                        placeholder={t("form.placeholders.numberOfInternationals")}
-                        className="mt-1"
-                        min={0}
-                        max={999}
-                      />
-                      {errors.numberOfInternationals && (
-                        <p className="text-destructive text-sm mt-1">
-                          {errors.numberOfInternationals.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="numberOfVehicles"
-                        className="text-sm font-medium"
-                      >
-                        {t("form.staffLabels.numberOfVehicles")}
-                      </Label>
-                      <NumberInput
-                        id="numberOfVehicles"
-                        value={watchedFields.numberOfVehicles || "0"}
-                        onChange={(value) => setValue("numberOfVehicles", value)}
-                        placeholder={t("form.placeholders.numberOfVehicles")}
-                        className="mt-1"
-                        min={0}
-                        max={999}
-                      />
-                      {errors.numberOfVehicles && (
-                        <p className="text-destructive text-sm mt-1">
-                          {errors.numberOfVehicles.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label
-                        htmlFor="numberOfWeapons"
-                        className="text-sm font-medium"
-                      >
-                        {t("form.staffLabels.numberOfWeapons")}
-                      </Label>
-                      <NumberInput
-                        id="numberOfWeapons"
-                        value={watchedFields.numberOfWeapons || "0"}
-                        onChange={(value) => setValue("numberOfWeapons", value)}
-                        placeholder={t("form.placeholders.numberOfWeapons")}
-                        className="mt-1"
-                        min={0}
-                        max={999}
-                      />
-                      {errors.numberOfWeapons && (
-                        <p className="text-destructive text-sm mt-1">
-                          {errors.numberOfWeapons.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Purpose of Entry - Only show when clearance type is not Permanent */}
-                  {watchedFields.clearanceType !== "Permanent" && (
-                    <div className="md:col-span-2 lg:col-span-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <Label
-                            htmlFor="purposeOfEntry"
-                            className="text-sm font-medium"
-                          >
-                            {t("form.staffLabels.purposeOfEntryEnglish")}
-                          </Label>
-                          <Textarea
-                            id="purposeOfEntry"
-                            {...register("purposeOfEntry")}
-                            placeholder={t("form.placeholders.purposeOfEntryEnglish")}
-                            className="mt-1 min-h-[100px]"
-                          />
-                          {errors.purposeOfEntry && (
-                            <p className="text-destructive text-sm mt-1">
-                              {errors.purposeOfEntry.message}
-                            </p>
-                          )}
-                        </div>
-
-                        <div>
-                          <Label
-                            htmlFor="purposeOfEntryArabic"
-                            className="text-sm font-medium"
-                          >
-                            {t("form.staffLabels.purposeOfEntryArabic")}
-                          </Label>
-                          <Textarea
-                            id="purposeOfEntryArabic"
-                            {...register("purposeOfEntryArabic")}
-                            placeholder={t("form.placeholders.purposeOfEntryArabic")}
-                            dir="rtl"
-                            className="mt-1 min-h-[100px]"
-                          />
-                          {errors.purposeOfEntryArabic && (
-                            <p className="text-destructive text-sm mt-1">
-                              {errors.purposeOfEntryArabic.message}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* File Upload Section */}
-            <Card>
-              <CardContent >
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">{t("form.file_upload.title")}</h3>
-                    <p className="text-sm text-muted-foreground mb-6">{t("form.file_upload.description")}</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {parseInt(watchedFields.numberOfWeapons || '0') > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.weapons_data")}</h4>
-                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.weapons.import_help")}</p>
-                        <FileUpload
-                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'weapons')}
-                          tableType="weapons"
-                          importedData={tableData.weapons}
-                          importedFileName={tableFileNames.weapons}
-                        />
-                      </div>
-                    )}
-
-                    {parseInt(watchedFields.numberOfVehicles || '0') > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.vehicles_data")}</h4>
-                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.vehicles.import_help")}</p>
-                        <FileUpload
-                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'vehicles')}
-                          tableType="vehicles"
-                          importedData={tableData.vehicles}
-                          importedFileName={tableFileNames.vehicles}
-                        />
-                      </div>
-                    )}
-
-                    {parseInt(watchedFields.numberOfInternationals || '0') > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.international_staff_data")}</h4>
-                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.international_staff.import_help")}</p>
-                        <FileUpload
-                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'international_staff')}
-                          tableType="international_staff"
-                          importedData={tableData.international_staff}
-                          importedFileName={tableFileNames.international_staff}
-                        />
-                      </div>
-                    )}
-
-                    {parseInt(watchedFields.numberOfIraqis || '0') > 0 && (
-                      <div>
-                        <h4 className="text-sm font-medium mb-3">{t("form.file_upload.local_staff_data")}</h4>
-                        <p className="text-xs text-muted-foreground mb-2">{t("form.tables.local_staff.import_help")}</p>
-                        <FileUpload
-                          onDataImport={(data, fileName) => handleFileImport(data, fileName, 'local_staff')}
-                          tableType="local_staff"
-                          importedData={tableData.local_staff}
-                          importedFileName={tableFileNames.local_staff}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Show message when no uploads are needed */}
-                  {parseInt(watchedFields.numberOfWeapons || '0') === 0 &&
-                    parseInt(watchedFields.numberOfVehicles || '0') === 0 &&
-                    parseInt(watchedFields.numberOfInternationals || '0') === 0 &&
-                    parseInt(watchedFields.numberOfIraqis || '0') === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p className="text-sm">{t("form.file_upload.no_uploads_needed")}</p>
-                        <p className="text-xs mt-1">{t("form.file_upload.set_counts_first")}</p>
-                      </div>
-                    )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <ContractPartnersStep {...stepProps} />;
 
       case 5:
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label
-                      htmlFor="managerName"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.staffLabels.managerName")}
-                    </Label>
-                    <Input
-                      id="managerName"
-                      {...register("managerName")}
-                      placeholder={t("form.placeholders.managerName")}
-                      className="mt-1"
-                    />
-                    {errors.managerName && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.managerName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="position" className="text-sm font-medium">
-                      {t("form.staffLabels.position")}
-                    </Label>
-                    <Input
-                      id="position"
-                      {...register("position")}
-                      placeholder={t("form.placeholders.position")}
-                      className="mt-1"
-                    />
-                    {errors.position && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.position.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <ContractDetailsStep {...stepProps} />;
 
       case 6:
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label
-                      htmlFor="authorizedPersonName"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.staffLabels.authorizedPersonNameEnglish")}
-                    </Label>
-                    <Input
-                      id="authorizedPersonName"
-                      {...register("authorizedPersonName")}
-                      placeholder={t("form.placeholders.authorizedPersonName")}
-                      className="mt-1"
-                    />
-                    {errors.authorizedPersonName && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.authorizedPersonName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="authorizedPersonNameArabic"
-                      className="text-sm font-medium"
-                      dir="rtl"
-                    >
-                      {t("form.staffLabels.authorizedPersonNameArabic")}
-                    </Label>
-                    <Input
-                      id="authorizedPersonNameArabic"
-                      {...register("authorizedPersonNameArabic")}
-                      placeholder={t("form.placeholders.authorizedPersonNameArabic")}
-                      dir="rtl"
-                      className="mt-1"
-                    />
-                    {errors.authorizedPersonNameArabic && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.authorizedPersonNameArabic.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="fpPhone" className="text-sm font-medium">
-                      {t("form.staffLabels.phoneNumber")}
-                    </Label>
-                    <Input
-                      id="fpPhone"
-                      {...register("fpPhone")}
-                      placeholder={t("form.placeholders.phoneNumber")}
-                      className="mt-1"
-                    />
-                    {errors.fpPhone && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.fpPhone.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="authorizedPersonId"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.staffLabels.idNumber")}
-                    </Label>
-                    <Input
-                      id="authorizedPersonId"
-                      {...register("authorizedPersonId")}
-                      placeholder={t("form.placeholders.authorizedPersonId")}
-                      className="mt-1"
-                    />
-                    {errors.authorizedPersonId && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.authorizedPersonId.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="authorizationStartDate"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.staffLabels.authorizationStartDate")}
-                    </Label>
-                    <Input
-                      id="authorizationStartDate"
-                      type="date"
-                      {...register("authorizationStartDate")}
-                      className="mt-1"
-                    />
-                    {errors.authorizationStartDate && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.authorizationStartDate.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label
-                      htmlFor="authorizationEndDate"
-                      className="text-sm font-medium"
-                    >
-                      {t("form.staffLabels.authorizationEndDate")}
-                    </Label>
-                    <Input
-                      id="authorizationEndDate"
-                      type="date"
-                      {...register("authorizationEndDate")}
-                      className="mt-1"
-                    />
-                    {errors.authorizationEndDate && (
-                      <p className="text-destructive text-sm mt-1">
-                        {errors.authorizationEndDate.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <DurationStep {...stepProps} />;
 
       case 7:
         return (
-          <div className="max-w-4xl mx-auto p-6 space-y-8">
-            {/* Summary Section */}
-            <div className="space-y-6">
-              {/* Clearance Type */}
-              <div className="pb-4 border-b">
-                <h3 className="font-semibold text-lg mb-3">{t("form.steps.review.clearanceTypeTitle")}</h3>
-                <Badge variant="secondary" className="text-xs px-4 py-2">
-                  {clearanceTypeArabic(watchedFields.clearanceType)}
-                </Badge>
-              </div>
-
-              {/* Company Info */}
-              <div className="pb-4 border-b">
-                <h4 className="font-medium mb-3 text-gray-900">
-                  {t("form.steps.review.companyInformation")}
-                </h4>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">{t("form.steps.review.company")}:</span>
-                    <span className="ml-2 font-medium">
-                      {watchedFields.companyNameEnglish}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">{t("form.steps.review.contractNumber")}:</span>
-                    <span className="ml-2 font-medium">
-                      {watchedFields.contractNumber}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-gray-600">{t("form.steps.review.iraqis")}:</span>
-                    <span className="ml-2 font-medium">
-                      {watchedFields.numberOfIraqis}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">{t("form.steps.review.internationals")}:</span>
-                    <span className="ml-2 font-medium">
-                      {watchedFields.numberOfInternationals}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">{t("form.steps.review.vehicles")}:</span>
-                    <span className="ml-2 font-medium">
-                      {watchedFields.numberOfVehicles}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">{t("form.steps.review.weapons")}:</span>
-                    <span className="ml-2 font-medium">
-                      {watchedFields.numberOfWeapons}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Final Notice */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center mt-0.5">
-                  <span className="text-white text-xs font-bold">✓</span>
-                </div>
-                <div>
-                  <h5 className="font-medium text-gray-900 mb-1">
-                    {t("form.steps.review.readyToGenerate")}
-                  </h5>
-                  <p className="text-sm text-gray-700">
-                    {t("form.steps.review.allInfoReviewed")}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StaffCountsStep
+            {...stepProps}
+            tableData={tableData}
+            tableFileNames={tableFileNames}
+            onFileImport={handleFileImport}
+          />
         );
+
+      case 8:
+        return (
+          <ResourcesStep
+            {...stepProps}
+            tableData={tableData}
+            tableFileNames={tableFileNames}
+            onFileImport={handleFileImport}
+          />
+        );
+
+      case 9:
+        return <PurposeStep {...stepProps} />;
+
+      case 10:
+        return <ManagementStep {...stepProps} />;
+
+      case 11:
+        return <AuthorizedPersonStep {...stepProps} />;
+
+      case 12:
+        return <AuthorizationValidityStep {...stepProps} />;
+
+      case 13:
+        return <ReviewStep {...stepProps} />;
 
       default:
         return null;
     }
   };
 
+  // Calculate progress percentage
+  const progress = Math.round((currentStep / steps.length) * 100);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#c6e0ff] to-[#ecf5ff] py-10 flex items-center justify-center">
-      <div className="mx-auto w-6xl px-4 h-[90vh]">
-        <div className="rounded-2xl bg-white h-full flex flex-col">
-          {/* Top Bar */}
-          <div className="flex items-center justify-between border-b border-blue-100 px-4 py-3 md:px-6 flex-shrink-0">
-            <button
-              type="button"
-              className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2"
-            >
-              <Logo width={25} height={25} />
-              <h1 className="font-bold">{t("common.companyName")} - {t("common.department")} / {t("common.title")}</h1>
-            </button>
+    <div className="min-h-screen bg-gray-100 font-sans text-gray-900 flex flex-col transition-colors duration-500">
 
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="ghost"
-                className="rounded-lg bg-red-100 py-5 px-6 text-red-600 hover:bg-red-200 flex items-center gap-1"
-                
-                onClick={clearAllSavedData}
-              >
-                <Trash2 className="h-4 w-4" />
-                {t("common.clearData")}
-              </Button>
-              <LanguageSwitcher />
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex flex-1 min-h-0">
-            {/* Left Rail - Vertical Stepper */}
-            <aside className="border-e border-blue-100 p-8  overflow-y-auto">
-              <ol className="relative space-y-6">
-                {steps.map((step, idx) => {
-                  const isActive = currentStep === step.id;
-                  const isCompleted = currentStep > step.id;
-                  const isNext = currentStep < step.id;
-                  return (
-                    <li
-                      key={step.id}
-                      className="relative flex items-start gap-3"
-                    >
-                      {/* Enhanced Connector Line */}
-                      {idx !== steps.length - 1 && (
-                        <div className="absolute start-[11px] top-6 w-0.5 h-16">
-                          <div
-                            className={`w-full h-full transition-all duration-300 ${isCompleted
-                              ? "bg-red-500"
-                              : isActive
-                                ? "bg-gradient-to-b from-red-500 to-border"
-                                : "bg-border"
-                              }`}
-                          />
-                        </div>
-                      )}
-
-                      {/* Enhanced Bullet */}
-                      <div className="relative z-10">
-                        <span
-                          className={`flex h-6 w-6 shrink-0 mt-0.5 items-center justify-center rounded-full border-2 text-xs font-medium transition-all duration-300 ${isCompleted
-                            ? "bg-red-500 text-primary-foreground border-white ring-2 ring-red-500"
-                            : isActive
-                              ? "border-red-500 text-red-500 bg-red-50 ring-2 ring-red-500/20"
-                              : isNext
-                                ? "border-border text-muted-foreground bg-background hover:border-primary/50 hover:text-primary/70 transition-colors"
-                                : "border-muted text-muted-foreground bg-red-500/30"
-                            }`}
-                        >
-                          {isCompleted ? (
-                            <svg
-                              className="w-4 h-4"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          ) : (
-                            step.id
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Enhanced Labels */}
-                      <div className="flex-1 min-w-0 pt-1">
-                        <div
-                          className={`text-sm font-semibold transition-colors duration-200 ${isActive
-                            ? "text-foreground"
-                            : isCompleted
-                              ? "text-foreground/90"
-                              : "text-muted-foreground"
-                            }`}
-                        >
-                          {step.title}
-                        </div>
-                        <div
-                          className={`text-xs mt-1 transition-colors duration-200 ${isActive
-                            ? "text-muted-foreground"
-                            : "text-muted-foreground/70"
-                            }`}
-                        >
-                          {step.description}
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </aside>
-
-            {/* Right - Form Area */}
-            <section className="flex flex-col flex-1 min-h-0">
-              <header className="flex-shrink-0 p-6">
-                <h1 className="text-xl font-semibold tracking-tight">
-                  {steps.find((s) => s.id === currentStep)?.title}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {steps.find((s) => s.id === currentStep)?.description}
-                </p>
-              </header>
-
-              <div className="flex flex-col flex-1 min-h-0 relative">
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  autoComplete="off"
-                  className="flex-1 overflow-y-auto pb-24"
-                >
-                  <div key={currentStep} className="">
-                    {renderStepContent()}
-                  </div>
-                </form>
-
-                {/* Sticky Navigation with Backdrop Blur */}
-                <div className="absolute bottom-0 left-0 right-0 bg-background/80 rounded-b-lg backdrop-blur-sm border-t border-blue-100">
-                  <div className="p-6 py-4 flex items-center justify-between">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={prevStep}
-                      disabled={currentStep === 1}
-                      className="flex items-center gap-2"
-                    >
-                      {locale === "ar" ? (
-                        <ArrowRight className="h-4 w-4" />
-                      ) : (
-                        <ArrowLeft className="h-4 w-4" />
-                      )}
-                      {t("common.back")}
-                    </Button>
-
-                    {currentStep < steps.length ? (
-                      <Button
-                        type="button"
-                        onClick={nextStep}
-                        className="flex items-center gap-2"
-                      >
-                        {t("common.continue")}
-                        {locale === 'ar' ? (
-                          <ArrowLeft className="h-4 w-4" />
-                        ) : (
-                          <ArrowRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        type="submit"
-                        onClick={(e) => {
-                          console.log("Download PDF button clicked!");
-                          console.log("Current form errors:", errors);
-                          handleSubmit(onSubmit)(e);
-                        }}
-                        className="flex items-center gap-2 min-w-[140px]"
-                      >
-                        <Eye className="h-4 w-4" />
-                        {t("common.downloadPdf")}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
+      {/* Top Progress Bar (Minimal) */}
+      <div className="fixed top-0 left-0 w-full z-50">
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full bg-red-600 transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
+
+      {/* Header (Minimal) */}
+      <header className="fixed top-0 left-0 mx-auto right-0 p-6 md:px-12 md:py-5 flex justify-between items-center z-40 bg-white/95 backdrop-blur-sm">
+        <Link href="/" className="flex items-center gap-2.5 opacity-60 hover:opacity-100 transition-opacity">
+          <Logo width={30} height={30} />
+          <div className="flex flex-col -space-y-0.5">
+          <p className="text-[12px] font-medium tracking-wide hidden md:inline-block text-gray-600">
+            {t("common.companyName")}
+          </p>
+          <p className="text-[10px] font-medium tracking-wide hidden md:inline-block text-gray-600">
+            {t("common.systemName")}
+          </p>
+          </div>
+        </Link>
+
+        <div className="flex items-center gap-3">
+          <div className="text-xs font-medium text-gray-500">
+            {currentStep} / {steps.length}
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleResetClick}
+            className="text-xs font-medium h-8 px-3 text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
+            title={t("common.clearData")}
+          >
+            <RotateCcw className="w-3.5 h-3.5 rtl:ml-1.5 ltr:mr-1.5" />
+            <span className="hidden sm:inline">{t("common.clearData")}</span>
+          </Button>
+          <LanguageSwitcher />
+        </div>
+      </header>
+
+      {/* Main Focused Content Area */}
+      <main className="flex-1 flex flex-col justify-start md:justify-center items-center w-full max-w-2xl mx-auto px-6 md:px-8 pt-28 pb-40 md:py-20 relative">
+
+        <form onSubmit={handleSubmit(onSubmit)} autoComplete="off" className="w-full">
+          {/* Animated Container for Questions */}
+          <div key={currentStep} className="animate-in slide-in-from-bottom-8 fade-in duration-700 ease-out fill-mode-forwards">
+
+            {/* Question Number - Minimal */}
+            <div className="flex items-center gap-2 mb-6 opacity-0 animate-in slide-in-from-left-4 fade-in duration-500 delay-75 fill-mode-forwards rtl:slide-in-from-right-4">
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                {String(currentStep).padStart(2, '0')}
+              </span>
+            </div>
+
+            {/* Hero Question Title - Minimal */}
+            <h2 className="text-2xl md:text-3xl font-medium text-gray-900 mb-4 leading-tight tracking-tight">
+              {steps.find((s) => s.id === currentStep)?.title}
+            </h2>
+
+            {/* Subtitle / Description - Minimal */}
+            <p className="text-sm md:text-base text-gray-500 font-normal mb-12 max-w-xl leading-relaxed">
+              {steps.find((s) => s.id === currentStep)?.description}
+            </p>
+
+            {/* Form Input Area */}
+            <div className="mb-12">
+              {renderStepContent()}
+            </div>
+
+            {/* Actions / Navigation - Minimal */}
+            <div className="flex items-center gap-3 flex-wrap pt-4">
+              {currentStep > 1 && (
+                <Button
+                  type="button"
+                  onClick={prevStep}
+                  variant="ghost"
+                  className="text-sm font-medium h-10 px-5 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all duration-200"
+                >
+                  <ArrowLeft className={`w-4 h-4 rtl:ml-2 ltr:mr-2 rtl:rotate-180`} />
+                  {t("form.buttons.back")}
+                </Button>
+              )}
+
+              {currentStep === 13 ? (
+                <Button
+                  type="submit"
+                  className="rounded-md text-sm font-medium h-10 px-6 bg-gray-900 hover:bg-gray-800 text-white transition-all duration-200"
+                >
+                  {t("form.buttons.downloadPDF")}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="rounded-md text-sm font-medium h-10 px-6 bg-gray-900 hover:bg-gray-800 text-white transition-all duration-200 group"
+                >
+                  {currentStep === steps.length - 1 ? t("form.buttons.review") : t("form.buttons.next")}
+                  {locale === 'ar' ? (
+                    <ArrowLeft className="rtl:ml-2 ltr:mr-2 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  ) : (
+                    <ArrowRight className="rtl:ml-2 ltr:mr-2 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
+        </form>
+
+      </main>
+
+      {/* Footer Branding (Minimal) */}
+      <footer className="fixed bottom-0 rtl:left-0 ltr:right-0 p-8 hidden md:block z-0 pointer-events-none">
+        <div className="text-[8rem] font-light text-gray-50 leading-none select-none opacity-30">
+          {String(currentStep).padStart(2, '0')}
+        </div>
+      </footer>
 
       {/* PDF Preview Modal */}
       {showPDFPreview && pdfData && (
@@ -1923,6 +594,37 @@ export default function MultiStepForm() {
           data={pdfData}
           onClose={() => setShowPDFPreview(false)}
         />
+      )}
+
+      {/* Reset Confirmation Dialog */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-lg animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {t("common.warning")}
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              {t("common.clearData")}? {t("common.confirm")}
+            </p>
+            <div className="flex items-center gap-3 justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowResetConfirm(false)}
+                className="text-sm font-medium h-9 px-4 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="button"
+                onClick={clearAllSavedData}
+                className="text-sm font-medium h-9 px-4 bg-red-600 hover:bg-red-700 text-white"
+              >
+                {t("common.clearData")}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

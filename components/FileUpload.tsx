@@ -210,10 +210,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
       ) : (
         <div className="border rounded-lg p-3 bg-green-50">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">{uploadedFile?.fileName}</p>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 truncate">{uploadedFile?.fileName}</p>
                 <p className="text-xs text-gray-500">
                   {t("form.file_upload.rows_imported", { count: uploadedFile?.rowCount || 0 })}
                 </p>
@@ -223,7 +223,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
               variant="ghost"
               size="sm"
               onClick={removeFile}
-              className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
+              className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
+              aria-label="Remove file"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -232,11 +233,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
           {/* Show validation warnings */}
           {validationResults && validationResults.warnings.length > 0 && (
             <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-              <div className="flex items-start space-x-2">
+              <div className="flex items-start gap-2">
                 <AlertTriangle className="h-3 w-3 text-yellow-500 mt-0.5 flex-shrink-0" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-yellow-800">Warnings:</p>
-                  <ul className="text-xs text-yellow-700 mt-1">
+                  <ul className="text-xs text-yellow-700 mt-1 space-y-0.5">
                     {validationResults.warnings.slice(0, 2).map((warning, index) => (
                       <li key={index}>• {warning}</li>
                     ))}
@@ -249,11 +250,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
           {/* Show file parsing errors */}
           {uploadedFile && uploadedFile.errors && uploadedFile.errors.length > 0 && (
             <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-md">
-              <div className="flex items-start space-x-2">
+              <div className="flex items-start gap-2">
                 <AlertTriangle className="h-3 w-3 text-orange-500 mt-0.5 flex-shrink-0" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-orange-800">Issues:</p>
-                  <ul className="text-xs text-orange-700 mt-1">
+                  <ul className="text-xs text-orange-700 mt-1 space-y-0.5">
                     {uploadedFile.errors.slice(0, 2).map((error, index) => (
                       <li key={index}>• {error}</li>
                     ))}
@@ -267,9 +268,9 @@ const FileUpload: React.FC<FileUploadProps> = ({
       
       {error && (
         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
-          <div className="flex items-start space-x-2">
+          <div className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-red-600">{error}</p>
+            <p className="text-xs text-red-600 flex-1">{error}</p>
           </div>
         </div>
       )}
@@ -282,7 +283,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         onClick={downloadTemplate}
         className="w-full"
       >
-        <Download className="w-4 h-4 mr-2" />
+        <Download className="w-4 h-4 rtl:ml-2 ltr:mr-2" />
         {t("form.file_upload.download_template")}
       </Button>
     </div>

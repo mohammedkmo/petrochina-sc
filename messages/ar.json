@@ -1,7 +1,8 @@
 {
   "common": {
-    "companyName": "بتروجاينا",
-    "department":"قسم الامن",
+    "companyName": "بتروشاينا هالفايا ش م ح فرع العراق",
+    "systemName": "مولد طلبات التصاريح الامنية",
+    "department": "قسم الامن",
     "title": "طلب التصريح الأمني",
     "next": "التالي",
     "previous": "السابق",
@@ -24,37 +25,65 @@
     "continue": "متابعة",
     "downloadPdf": "معاينة وطباعة PDF",
     "generating": "جاري الإنشاء...",
-    "clearData": "مسح جميع البيانات"
+    "clearData": "مسح جميع البيانات",
+    "questionMark": "؟"
   },
   "form": {
     "steps": {
       "clearance": {
         "title": "نوع التصريح الأمني",
-        "description": "اختر نوع التصريح الأمني المطلوب"
+        "description": "اختر نوع التصريح ونوع الموافقة المطلوبة"
       },
-      "company": {
-        "title": "معلومات الشركة",
-        "description": "قدم تفاصيل شركتك وترويستها"
+      "companyIdentity": {
+        "title": "هوية الشركة",
+        "description": "أدخل اسم الشركة باللغتين العربية والإنجليزية"
       },
-      "contract": {
+      "companyContact": {
+        "title": "معلومات الاتصال",
+        "description": "بيانات الاتصال وشعار الشركة (الترويسة)"
+      },
+      "contractPartners": {
+        "title": "أطراف العقد",
+        "description": "أدخل معلومات الجهة المتعاقد معها"
+      },
+      "contractDetails": {
         "title": "تفاصيل العقد",
-        "description": "أدخل معلومات العقد وتفاصيل المشروع"
+        "description": "أدخل رقم العقد، الموضوع، وتواريخ الصلاحية."
       },
-      "staff": {
-        "title": "معلومات الموظفين",
-        "description": "أضف أعضاء الفريق الذين يحتاجون للتصريح"
+      "contractTimeline": {
+        "title": "مدة التصريح",
+        "description": "حدد المدة المطلوبة للتصريح الأمني.",
+        "durationTitle": "صلاحية التصريح الأمني",
+        "durationHelp": "إجمالي عدد الأيام المطلوبة لطلب التصريح."
+      },
+      "staffCounts": {
+        "title": "أعداد الموظفين",
+        "description": "أعداد الموظفين العراقيين والأجانب"
+      },
+      "resources": {
+        "title": "الموارد",
+        "description": "تحديد المركبات والأسلحة للمهمة"
+      },
+      "purpose": {
+        "title": "الغرض من الدخول",
+        "description": "بيان الغرض من مهمتكم",
+        "notRequired": "الغرض من الدخول غير مطلوب لنوع التصريح الدائم."
       },
       "management": {
         "title": "معلومات الإدارة",
-        "description": "قدم معلومات الإدارة"
+        "description": "بيانات المدير والمنصب"
       },
-      "authorized": {
-        "title": "الأشخاص المخولون",
-        "description": "أضف معلومات الأشخاص المخولين"
+      "authorizedPerson": {
+        "title": "الشخص المخول",
+        "description": "معلومات الشخص المخول بالتوقيع"
+      },
+      "authorizationValidity": {
+        "title": "صلاحية التخويل",
+        "description": "فترة سريان تخويل الشخص المسؤول"
       },
       "review": {
-        "title": "مراجعة",
-        "description": "راجع جميع المعلومات قبل الإرسال",
+        "title": "مراجعة نهائية",
+        "description": "مراجعة وتدقيق جميع البيانات قبل الإصدار",
         "clearanceTypeTitle": "نوع التصريح",
         "companyInformation": "معلومات الشركة",
         "contractDetails": "تفاصيل العقد",
@@ -127,6 +156,16 @@
       "urgent": "عاجل",
       "urgentDescription": "تصريح طارئ للاحتياجات الفورية"
     },
+    "buttons": {
+      "next": "التالي",
+      "back": "رجوع",
+      "review": "مراجعة",
+      "downloadPDF": "تحميل PDF"
+    },
+    "options": {
+      "fast": "سريع",
+      "normal": "عادي"
+    },
     "fields": {
       "companyNameEnglish": "اسم الشركة (بالإنجليزية)",
       "companyNameArabic": "اسم الشركة (بالعربية)",
@@ -189,7 +228,12 @@
       "contractedWithEnglish": "المتعاقد مع (إنجليزي)",
       "contractedWithArabic": "المتعاقد مع (عربي)",
       "contractSubjectEnglish": "موضوع العقد (إنجليزي)",
-      "contractSubjectArabic": "موضوع العقد (عربي)",
+      "contractSubjectArabic": "الموضوع (عربي)",
+      "contractIdentity": "معلومات العقد",
+      "contractValidity": "فترة الصلاحية",
+      "contractSubject": "موضوع العقد",
+      "days": "يوم",
+      "fullNameEnglish": "الاسم الكامل (إنجليزي)",
       "companyNameEnglish": "اسم الشركة (إنجليزي)",
       "companyNameArabic": "اسم الشركة (عربي)",
       "contactInfo": "معلومات الاتصال",
@@ -223,6 +267,7 @@
       "authorizedPersonId": "أدخل رقم الهوية"
     },
     "staffLabels": {
+      "title": "المسميات الوظيفية",
       "numberOfIraqis": "عدد العراقيين",
       "numberOfInternationals": "عدد الأجانب",
       "numberOfVehicles": "عدد المركبات",
@@ -235,6 +280,7 @@
       "authorizedPersonNameArabic": "اسم الشخص المخول (عربي)",
       "phoneNumber": "رقم الهاتف",
       "idNumber": "رقم الهوية (الهوية المدنية/جواز السفر)",
+      "authorizedPersonId": "هوية الشخص المخول",
       "authorizationStartDate": "تاريخ بداية التفويض",
       "authorizationEndDate": "تاريخ انتهاء التفويض"
     },
@@ -247,6 +293,7 @@
       "uploading": "جاري الرفع...",
       "alt": "ترويسة الشركة",
       "replace": "استبدال",
+      "remove": "إزالة",
       "delete": "حذف"
     }
   },

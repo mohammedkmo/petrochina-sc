@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
-import { Rubik } from "next/font/google";
+import { Noto_Kufi_Arabic, Geist } from "next/font/google";
 import {NextIntlClientProvider, hasLocale} from 'next-intl';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
 import "../globals.css";
 
-const rubik = Rubik({
+const notoKufiArabic = Noto_Kufi_Arabic({
   subsets: ["latin", "arabic"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700","800","900"],
+  variable: "--font-noto-kufi-arabic",
+});
+
+const geist = Geist({
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-geist",
 });
 
 export const metadata: Metadata = {
@@ -37,7 +44,8 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <body
-        className={`${rubik.className} antialiased`}
+        className={`${notoKufiArabic.variable} ${geist.variable} antialiased`}
+        style={{ fontFamily: 'var(--font-noto-kufi-arabic), var(--font-geist), sans-serif' }}
       >
         <NextIntlClientProvider>
           {children}
