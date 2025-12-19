@@ -53,7 +53,7 @@ export const ContractDetailsStep: React.FC<StepComponentProps> = ({
               id="startingDate"
               type="date"
               {...register("startingDate")}
-              className="h-14 text-lg px-4 rounded-xl border-2 border-gray-200 bg-white focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all font-medium placeholder:text-gray-400 hover:border-gray-300"
+              className="h-14 text-lg px-4 rounded-xl border-1 border-gray-200 bg-white focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all font-medium placeholder:text-gray-400 hover:border-gray-300"
             />
             {errors.startingDate && (
               <p className="text-red-600 text-xs mt-1.5">{errors.startingDate.message}</p>
@@ -69,7 +69,7 @@ export const ContractDetailsStep: React.FC<StepComponentProps> = ({
               id="endDate"
               type="date"
               {...register("endDate")}
-              className="h-14 text-lg px-4 rounded-xl border-2 border-gray-200 bg-white focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all font-medium placeholder:text-gray-400 hover:border-gray-300"
+              className="h-14 text-lg px-4 rounded-xl border-1 border-gray-200 bg-white focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all font-medium placeholder:text-gray-400 hover:border-gray-300"
             />
             {errors.endDate && (
               <p className="text-red-600 text-xs mt-1.5">{errors.endDate.message}</p>

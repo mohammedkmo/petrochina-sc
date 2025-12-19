@@ -74,6 +74,7 @@ export default function MultiStepForm() {
   // Form state
   const [currentStep, setCurrentStep] = useState(1);
   const [headerImageUrl, setHeaderImageUrl] = useState<string>("");
+  const [tempImageForCrop, setTempImageForCrop] = useState<string | null>(null);
   const [tableData, setTableData] = useState<TableDataState>({
     weapons: [],
     vehicles: [],
@@ -229,48 +230,15 @@ export default function MultiStepForm() {
       // Create image element to check dimensions
       const img = new Image();
       img.onload = () => {
-        const width = img.width;
-        const height = img.height;
-
-        // Check if dimensions are appropriate for letterhead banner format
-        // Optimal: 680x96, Maximum: 1360x192, Aspect ratio should be between 6:1 and 8:1
-        const aspectRatio = width / height;
-
-        if (width < 680 || height < 96) {
-          setImageError(
-            t("validation.imageDimensionsTooSmall")
-          );
-          setIsUploading(false);
-          return;
-        }
-
-        if (width > 1360 || height > 192) {
-          setImageError(
-            t("validation.imageDimensionsTooLarge")
-          );
-          setIsUploading(false);
-          return;
-        }
-
-        if (aspectRatio < 6.0 || aspectRatio > 8.0) {
-          setImageError(
-            t("validation.invalidAspectRatio")
-          );
-          setIsUploading(false);
-          return;
-        }
-
-        // If all validations pass, proceed with upload
+        // No dimension restrictions - user can upload any image
+        // They will crop it to the required size
         const reader = new FileReader();
         reader.onload = (e) => {
           const result = e.target?.result as string;
-          setHeaderImageUrl(result);
-          setValue("headerImageUrl", result); // Update form field
-          setImageError(null); // Clear any previous errors
+          // Store the original image temporarily for cropping
+          setTempImageForCrop(result);
           setIsUploading(false);
         };
-
-        // Image loading progress handled automatically
 
         reader.readAsDataURL(file);
       };
@@ -405,11 +373,22 @@ export default function MultiStepForm() {
             isDragOver={isDragOver}
             isUploading={isUploading}
             imageError={imageError}
+            tempImageForCrop={tempImageForCrop}
             onFileInputChange={handleFileInputChange}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onRemoveImage={removeImage}
+            onCropComplete={(croppedImageDataUrl) => {
+              setHeaderImageUrl(croppedImageDataUrl);
+              setValue("headerImageUrl", croppedImageDataUrl);
+              setTempImageForCrop(null);
+              setImageError(null);
+            }}
+            onCropCancel={() => {
+              setTempImageForCrop(null);
+              setIsUploading(false);
+            }}
           />
         );
 

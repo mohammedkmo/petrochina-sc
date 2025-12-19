@@ -293,7 +293,18 @@
       "alt": "Company letterhead",
       "replace": "Replace",
       "remove": "Remove",
-      "delete": "Delete"
+      "delete": "Delete",
+      "dragDrop": "Drag and drop your image here, or click to browse",
+      "maxSize": "Maximum file size: 10MB. Any image size accepted - you'll crop it to fit.",
+      "browseFiles": "Browse Files",
+      "cropper": {
+        "title": "Crop Image to {width}×{height}px",
+        "zoom": "Zoom",
+        "cancel": "Cancel",
+        "cropAndSave": "Crop & Save",
+        "cropPreview": "Crop preview",
+        "instructions": "Drag the crop box to select the area you want to use for your letterhead"
+      }
     }
   },
   "validation": {

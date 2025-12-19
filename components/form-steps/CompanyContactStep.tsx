@@ -10,17 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { StepComponentProps } from "@/lib/form-types";
+import ImageCropper from "@/components/ImageCropper";
+import Image from "next/image";
 
 interface CompanyContactStepProps extends StepComponentProps {
   headerImageUrl: string;
   isDragOver: boolean;
   isUploading: boolean;
   imageError: string | null;
+  tempImageForCrop: string | null;
   onFileInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   onRemoveImage: () => void;
+  onCropComplete: (croppedImageDataUrl: string) => void;
+  onCropCancel: () => void;
 }
 
 export const CompanyContactStep: React.FC<CompanyContactStepProps> = ({
@@ -31,11 +36,14 @@ export const CompanyContactStep: React.FC<CompanyContactStepProps> = ({
   isDragOver,
   isUploading,
   imageError,
+  tempImageForCrop,
   onFileInputChange,
   onDragOver,
   onDragLeave,
   onDrop,
   onRemoveImage,
+  onCropComplete,
+  onCropCancel,
 }) => {
   return (
     <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -64,7 +72,7 @@ export const CompanyContactStep: React.FC<CompanyContactStepProps> = ({
 
         {!headerImageUrl ? (
           <div
-            className={`relative border border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer group ${
+            className={`relative border border-dashed bg-white rounded-lg p-8 text-center transition-all duration-200 cursor-pointer group ${
               isDragOver
                 ? "border-gray-400 bg-gray-50"
                 : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
@@ -120,11 +128,12 @@ export const CompanyContactStep: React.FC<CompanyContactStepProps> = ({
             </div>
           </div>
         ) : (
-          <div className="relative rounded-lg overflow-hidden border border-gray-200 group">
-            <img
+          <div className="relative rounded-lg overflow-hidden border border-gray-200 group h-40">
+            <Image
               src={headerImageUrl}
               alt="Header Preview"
-              className="w-full h-40 object-cover bg-gray-50"
+              fill
+              className="object-cover bg-gray-50"
             />
             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Button
@@ -148,6 +157,17 @@ export const CompanyContactStep: React.FC<CompanyContactStepProps> = ({
         )}
         {imageError && (
           <p className="text-red-600 text-xs mt-3 font-medium">{imageError}</p>
+        )}
+
+        {/* Image Cropper Dialog */}
+        {tempImageForCrop && (
+          <ImageCropper
+            imageSrc={tempImageForCrop}
+            onCrop={onCropComplete}
+            onCancel={onCropCancel}
+            targetWidth={1200}
+            targetHeight={150}
+          />
         )}
       </div>
     </div>
