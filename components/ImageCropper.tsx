@@ -6,8 +6,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { X, Check, ZoomIn, ZoomOut, Move } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { X, Check, ZoomIn, ZoomOut } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 
@@ -137,7 +136,7 @@ export default function ImageCropper({
     x: number,
     y: number,
     width: number,
-    height: number
+    _height: number
   ): { x: number; y: number; width: number; height: number } => {
     const containerWidth = containerSize.width;
     const containerHeight = containerSize.height;
@@ -436,7 +435,6 @@ export default function ImageCropper({
                           width: '12px',
                           height: '12px',
                           zIndex: 2000,
-                          cursor: positions[corner as keyof typeof positions].cursor,
                           ...positions[corner as keyof typeof positions],
                           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
                         }}
